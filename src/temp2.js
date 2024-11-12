@@ -1,8 +1,10 @@
-import React, { useReducer } from 'react';
+import React, {  useEffect, useReducer, useState  } from 'react';
 import { Paper, Typography, TextField, Button, MenuItem, IconButton } from '@mui/material';
 import { Container, Row, Col } from 'react-bootstrap';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
+import { useParams } from 'react-router-dom';
 
 const initialState = {
   productName: '',
@@ -15,8 +17,8 @@ const initialState = {
   description: '',
   productStatus: 'active',
   mainImage: null,
-  galleryImages: [], // Ensure galleryImages is always an array
-  variations: [], // New field for product variations
+  galleryImages: [],
+  variations: [],
 };
 
 function reducer(state, action) {
@@ -30,68 +32,70 @@ function reducer(state, action) {
     case 'REMOVE_GALLERY_IMAGE':
       return {
         ...state,
-        galleryImages: state.galleryImages.filter((_, index) => index !== action.index)
+        galleryImages: state.galleryImages.filter((_, index) => index !== action.index),
       };
     case 'ADD_VARIATION':
-      return { ...state, variations: [...state.variations, { size: '', colors: [] }] };
+      return {
+        ...state,
+        variations: [
+          ...state.variations,
+          { size: '', colors: [{ color: '', count: 0 }] },
+        ],
+      };
     case 'SET_VARIATION_SIZE':
-      return {
-        ...state,
-        variations: state.variations.map((variation, index) =>
-          index === action.index ? { ...variation, size: action.value } : variation
-        )
-      };
-    case 'ADD_COLOR_COUNT':
-      return {
-        ...state,
-        variations: state.variations.map((variation, index) =>
-          index === action.index
-            ? { ...variation, colors: [...variation.colors, { color: '', count: 0 }] }
-            : variation
-        )
-      };
+      const updatedVariations = [...state.variations];
+      updatedVariations[action.index].size = action.value;
+      return { ...state, variations: updatedVariations };
     case 'SET_COLOR_COUNT':
-      return {
-        ...state,
-        variations: state.variations.map((variation, varIndex) =>
-          varIndex === action.variationIndex
-            ? {
-                ...variation,
-                colors: variation.colors.map((colorObj, colorIndex) =>
-                  colorIndex === action.colorIndex
-                    ? { ...colorObj, [action.field]: action.value }
-                    : colorObj
-                )
-              }
-            : variation
-        )
-      };
+      const updatedVariationsColor = [...state.variations];
+      updatedVariationsColor[action.index].colors[action.colorIndex][action.field] =
+        action.value;
+      return { ...state, variations: updatedVariationsColor };
+    case 'ADD_COLOR':
+      const newVariationWithColor = [...state.variations];
+      newVariationWithColor[action.index].colors.push({ color: '', count: 0 });
+      return { ...state, variations: newVariationWithColor };
     default:
       return state;
   }
 }
 
-function AddProduct() {
+function EditProduct() {
+  const { id } = useParams();
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const handleSubmit = async () => {
-    // Regex validation for positive numbers
-    const numberPattern = /^[1-9]\d*$/;
-
-    // Validate variations
-    for (const variation of state.variations) {
-      if (!variation.size) {
-        alert("Please select a size for all variations.");
-        return;
-      }
-      for (const colorObj of variation.colors) {
-        if (!colorObj.color || !numberPattern.test(colorObj.count)) {
-          alert("Please ensure each color has a valid name and positive count.");
-          return;
+  useEffect(() => {
+    if (id) {
+      const fetchProduct = async () => {
+        try {
+          const response = await axios.get(`/api/products/${id}`);
+          const productData = response.data;
+          dispatch({
+            type: 'SET_INITIAL_DATA',
+            data: {
+              productName: productData.productName,
+              category: productData.category,
+              lowStockCount: productData.lowStockCount,
+              brand: productData.brand,
+              unitPrice: productData.unitPrice,
+              discount: productData.discount,
+              visibility: productData.visibility,
+              description: productData.description,
+              productStatus: productData.productStatus,
+              mainImage: productData.mainImage,
+              galleryImages: productData.galleryImages,
+              variations: productData.variations,
+            },
+          });
+        } catch (error) {
+          console.error('Error fetching product:', error);
         }
-      }
+      };
+      fetchProduct();
     }
+  }, [id]);
 
+  const handleSubmit = async () => {
     try {
       const formData = new FormData();
       formData.append('productName', state.productName);
@@ -104,20 +108,24 @@ function AddProduct() {
       formData.append('description', state.description);
       formData.append('productStatus', state.productStatus);
       formData.append('mainImage', state.mainImage);
-      
-      // Ensure galleryImages is not undefined and is always an array
       state.galleryImages.forEach((image, index) => {
         formData.append(`galleryImages[${index}]`, image);
       });
-      
       formData.append('variations', JSON.stringify(state.variations));
 
-      const response = await axios.post('/api/products', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      alert('Product added successfully!');
+      if (id) {
+        await axios.put(`/api/products/${id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        alert('Product updated successfully!');
+      } else {
+        await axios.post('/api/products', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        alert('Product added successfully!');
+      }
     } catch (error) {
-      console.error('Failed to add product:', error);
+      console.error('Failed to submit product:', error);
     }
   };
 
@@ -140,27 +148,155 @@ function AddProduct() {
       <Container className="mt-4">
         <Row>
           <Col md={6} sm={12}>
-            {/* Existing fields */}
-            {/* Product Variation Section */}
-            <Typography variant="h6" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold' }}>Product Name</Typography>
+            <TextField
+              fullWidth
+              value={state.productName}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'productName', value: e.target.value })}
+              sx={{ marginTop: 1 }}
+            />
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Category</Typography>
+            <TextField
+              fullWidth
+              select
+              value={state.category}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'category', value: e.target.value })}
+              sx={{ marginTop: 1 }}
+            >
+              <MenuItem value="Electronics">Electronics</MenuItem>
+              <MenuItem value="Apparel">Apparel</MenuItem>
+            </TextField>
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Low Stock Count</Typography>
+            <TextField
+              fullWidth
+              type="number"
+              value={state.lowStockCount}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'lowStockCount', value: Number(e.target.value) })}
+              sx={{ marginTop: 1 }}
+            />
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Unit Price</Typography>
+            <TextField
+              fullWidth
+              type="number"
+              value={state.unitPrice}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'unitPrice', value: Number(e.target.value) })}
+              sx={{ marginTop: 1 }}
+            />
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Description</Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              value={state.description}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
+              sx={{ marginTop: 1 }}
+            />
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Product Status</Typography>
+            <TextField
+              fullWidth
+              select
+              value={state.productStatus}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'productStatus', value: e.target.value })}
+              sx={{ marginTop: 1 }}
+            >
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
+            </TextField>
+          </Col>
+          <Col md={6} sm={12}>
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Discount</Typography>
+            <TextField
+              fullWidth
+              type="number"
+              value={state.discount}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'discount', value: Number(e.target.value) })}
+              sx={{ marginTop: 1 }}
+            />
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold' }}>Product Main Image</Typography>
+            <TextField
+              fullWidth
+              type="file"
+              inputProps={{ accept: 'image/*' }}
+              onChange={(e) => dispatch({ type: 'SET_MAIN_IMAGE', value: e.target.files[0] })}
+              sx={{ marginTop: 1 }}
+            />
+            {state.mainImage && (
+              <div style={{ position: 'relative', marginTop: '10px' }}>
+                <img
+                  src={URL.createObjectURL(state.mainImage)}
+                  alt="Main Product"
+                  style={{ width: '40%', height: 'auto', borderRadius: '4px' }}
+                />
+                <IconButton
+                  onClick={() => dispatch({ type: 'SET_MAIN_IMAGE', value: null })}
+                  style={{
+                    position: 'absolute',
+                    top: '5px',
+                    right: '5px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  }}
+                >
+                  <DeleteIcon color="error" />
+                </IconButton>
+              </div>
+            )}
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Product Gallery</Typography>
+            <TextField
+              fullWidth
+              type="file"
+              inputProps={{ accept: 'image/*', multiple: true }}
+              onChange={(e) => {
+                Array.from(e.target.files).forEach((file) =>
+                  dispatch({ type: 'ADD_GALLERY_IMAGE', value: file })
+                );
+              }}
+              sx={{ marginTop: 1 }}
+            />
+            <Row className="mt-2">
+              {state.galleryImages.map((image, index) => (
+                <Col xs={4} key={index} style={{ position: 'relative', marginBottom: '10px' }}>
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt={`gallery-${index}`}
+                    style={{ width: '100%', height: 'auto', borderRadius: '4px' }}
+                  />
+                  <IconButton
+                    onClick={() => dispatch({ type: 'REMOVE_GALLERY_IMAGE', index })}
+                    style={{
+                      position: 'absolute',
+                      top: '5px',
+                      right: '5px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    }}
+                  >
+                    <DeleteIcon color="error" />
+                  </IconButton>
+                </Col>
+              ))}
+            </Row>
+            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 4 }}>
               Product Variation
             </Typography>
             <Button
               variant="outlined"
               onClick={() => dispatch({ type: 'ADD_VARIATION' })}
-              sx={{ marginBottom: 2 }}
+              sx={{ marginTop: 2 ,marginLeft: 2}}
             >
-              Add Size
+              Add Variation
             </Button>
-            {Array.isArray(state.variations) && state.variations.map((variation, index) => (
+            {state.variations.map((variation, index) => (
               <div key={index}>
+                <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
+                  Size
+                </Typography>
                 <TextField
-                  select
                   fullWidth
-                  label="Size"
+                  select
                   value={variation.size}
-                  onChange={(e) => dispatch({ type: 'SET_VARIATION_SIZE', index, value: e.target.value })}
-                  sx={{ marginBottom: 2 }}
+                  onChange={(e) =>
+                    dispatch({ type: 'SET_VARIATION_SIZE', index, value: e.target.value })
+                  }
+                  sx={{ marginTop: 1 }}
                 >
                   <MenuItem value="Small">Small</MenuItem>
                   <MenuItem value="Medium">Medium</MenuItem>
@@ -168,50 +304,55 @@ function AddProduct() {
                   <MenuItem value="XL">XL</MenuItem>
                   <MenuItem value="XXL">XXL</MenuItem>
                 </TextField>
+
+                {variation.colors.map((color, colorIndex) => (
+                  <div key={colorIndex}>
+                    <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
+                      Color
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      label="Color"
+                      value={color.color}
+                      onChange={(e) =>
+                        dispatch({
+                          type: 'SET_COLOR_COUNT',
+                          index,
+                          colorIndex,
+                          field: 'color',
+                          value: e.target.value,
+                        })
+                      }
+                      sx={{ marginTop: 1 }}
+                    />
+                    <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
+                      Count
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      value={color.count}
+                      onChange={(e) =>
+                        dispatch({
+                          type: 'SET_COLOR_COUNT',
+                          index,
+                          colorIndex,
+                          field: 'count',
+                          value: e.target.value,
+                        })
+                      }
+                      sx={{ marginTop: 1 }}
+                    />
+                  </div>
+                ))}
+
                 <Button
                   variant="outlined"
-                  onClick={() => dispatch({ type: 'ADD_COLOR_COUNT', index })}
-                  sx={{ marginBottom: 2 }}
+                  onClick={() => dispatch({ type: 'ADD_COLOR', index })}
+                  sx={{ marginTop: 2 }}
                 >
-                  Add Color & Count
+                  Add Color
                 </Button>
-                {Array.isArray(variation.colors) && variation.colors.map((colorObj, colorIndex) => (
-                  <Row key={colorIndex} className="mb-2">
-                    <Col>
-                      <TextField
-                        label="Color"
-                        value={colorObj.color}
-                        onChange={(e) =>
-                          dispatch({
-                            type: 'SET_COLOR_COUNT',
-                            variationIndex: index,
-                            colorIndex,
-                            field: 'color',
-                            value: e.target.value,
-                          })
-                        }
-                        fullWidth
-                      />
-                    </Col>
-                    <Col>
-                      <TextField
-                        label="Count"
-                        value={colorObj.count}
-                        onChange={(e) =>
-                          dispatch({
-                            type: 'SET_COLOR_COUNT',
-                            variationIndex: index,
-                            colorIndex,
-                            field: 'count',
-                            value: e.target.value,
-                          })
-                        }
-                        fullWidth
-                        inputProps={{ pattern: '^[1-9]\\d*$' }} // Validates positive integers
-                      />
-                    </Col>
-                  </Row>
-                ))}
               </div>
             ))}
           </Col>
@@ -228,4 +369,4 @@ function AddProduct() {
   );
 }
 
-export default AddProduct;
+export default EditProduct;

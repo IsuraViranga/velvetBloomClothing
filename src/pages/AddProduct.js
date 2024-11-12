@@ -244,7 +244,6 @@ function AddProduct() {
             >
               Add Variation
             </Button>
-
             {state.variations.map((variation, index) => (
               <div key={index}>
                 <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
@@ -286,7 +285,6 @@ function AddProduct() {
                       }
                       sx={{ marginTop: 1 }}
                     />
-
                     <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
                       Count
                     </Typography>
