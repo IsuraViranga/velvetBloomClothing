@@ -22,7 +22,7 @@ function Sidebar() {
         width: 250,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: 250,
+          width: 270,
           backgroundColor: '#BE78F0', 
           color: 'white',
           border: 'none',
@@ -66,7 +66,7 @@ function Sidebar() {
           {/* List items with icons */}
           {[ 
             { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-            { label: 'Project Management', icon: <AssignmentIcon />, path: '/project-management' },
+            { label: 'Product Management', icon: <AssignmentIcon />, path: '/project-management' },
             { label: 'Category', icon: <CategoryIcon />, path: '/category' },
             { label: 'Order Management', icon: <ShoppingCartIcon />, path: '/order-management' },
           ].map((item) => (

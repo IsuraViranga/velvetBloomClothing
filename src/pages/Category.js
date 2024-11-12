@@ -198,6 +198,7 @@ function Category() {
             label="Category Name"
             value={categoryToEdit?.category_name || ''}
             onChange={(e) => setCategoryToEdit({ ...categoryToEdit, category_name: e.target.value })}
+            sx={{ marginTop: 2 }}
           />
           <TextField
             fullWidth
