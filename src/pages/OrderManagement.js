@@ -1,192 +1,211 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from "react";
 import {
-  Paper, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, TablePagination, Grid, Button, TextField, Select,
-  InputLabel, FormControl, MenuItem, IconButton, Dialog, DialogActions,
-  DialogContent, DialogTitle
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { DatePicker } from '@mui/lab';
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import LocalizationProvider from '@mui/lab/LocalizationProvider';
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Grid,
+  Button,
+  TextField,
+  Select,
+  InputLabel,
+  FormControl,
+  MenuItem,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TablePagination,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { DatePicker } from "@mui/lab";
+import AdapterDateFns from "@mui/lab/AdapterDateFns";
+import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import CloseIcon from "@mui/icons-material/Close";
+import { blue, red, green, yellow } from "@mui/material/colors";
 
 function OrderManagement() {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchName, setSearchName] = useState('');
-  const [searchDate, setSearchDate] = useState(null);
-  const [status, setStatus] = useState('All');
+  const [orders, setOrders] = useState([
+    {
+      _id: "1",
+      createdAt: "2024-11-15",
+      status: "Shipped",
+      customerName: "Cody Fisher",
+      items: [{ name: "Hoody", price: 12.5 }],
+      color: "Red",
+      size: "M",
+      count: 2,
+      total: 25.0,
+      paymentMethod: "Card",
+    },
+    {
+      _id: "2",
+      createdAt: "2024-11-18",
+      status: "Ordered",
+      customerName: "Jane Doe",
+      items: [{ name: "Hoody", price: 12.5 }],
+      color: "Blue",
+      size: "L",
+      count: 1,
+      total: 25.0,
+      paymentMethod: "Cash",
+    },
+  ]);
+  const [filteredOrders, setFilteredOrders] = useState(orders);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState(null);
   const [orderToDelete, setOrderToDelete] = useState(null);
+  const [editDate, setEditDate] = useState(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
-  // Fetch orders from the API
-  useEffect(() => {
-    async function fetchOrders() {
-      try {
-        const response = await axios.get('/api/orders');
-        const fetchedOrders = response.data;
-        // Merge the mock orders with the fetched data
-        const mockOrders = generateMockOrders(50);
-        setOrders([...fetchedOrders, ...mockOrders]);
-        setFilteredOrders([...fetchedOrders, ...mockOrders]);
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-        // If the API fails, show mock data
-        const mockOrders = generateMockOrders(50);
-        setOrders(mockOrders);
-        setFilteredOrders(mockOrders);
-      }
-    }
-    fetchOrders();
-  }, []);
+  const [page, setPage] = useState(0); // Current page index
+  const [rowsPerPage, setRowsPerPage] = useState(5); // Rows per page
 
-  // Generate mock data
-  const generateMockOrders = (count) => {
-    const statuses = ['Ordered', 'Packed', 'Shipped', 'Delivered'];
-    const paymentMethods = ['Credit Card', 'PayPal', 'Cash'];
-    return Array.from({ length: count }, (_, i) => ({
-      orderID: `MOCK${i + 1}`,
-      Date: `2024-11-${String(i % 30 + 1).padStart(2, '0')}`,
-      Status: statuses[i % statuses.length],
-      CustomerName: `Customer ${i + 1}`,
-      Items: `${Math.floor(Math.random() * 10) + 1} items`,
-      Total: `${(Math.random() * 1000 + 100).toFixed(2)}`,
-      PayMethod: paymentMethods[i % paymentMethods.length],
-    }));
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
   };
 
-  // Filter orders based on search criteria
-  useEffect(() => {
-    const filtered = orders.filter(order => {
-      const matchesName = order.CustomerName.toLowerCase().includes(searchName.toLowerCase());
-      const matchesDate = !searchDate || order.Date === searchDate.toISOString().slice(0, 10); // Adjust format as needed
-      const matchesStatus = status === 'All' || order.Status === status;
-      
-      return matchesName && matchesDate && matchesStatus;
-    });
-    setFilteredOrders(filtered);
-  }, [searchName, searchDate, status, orders]);
-
-  // Pagination controls
-  const handleChangePage = (event, newPage) => setPage(newPage);
-  const handleChangeRowsPerPage = (event) => {
+  const handleRowsPerPageChange = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+    setPage(0); // Reset to first page
   };
 
-  // Open edit dialog
-  const handleOpenEditDialog = async (orderId) => {
-    try {
-      const response = await axios.get(`/api/orders/${orderId}`);
-      setOrderToEdit(response.data);
-      setOpenEditDialog(true);
-    } catch (error) {
-      console.error('Error fetching order details:', error);
-    }
+  const displayedOrders = filteredOrders.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const handleOpenEditDialog = (order) => {
+    setOrderToEdit(order);
+    setEditDate(new Date(order.createdAt));
+    setEditStatus(order.status);
+    setOpenEditDialog(true);
   };
 
-  // Close edit dialog
   const handleCloseEditDialog = () => {
     setOrderToEdit(null);
+    setEditDate(null);
+    setEditStatus("");
     setOpenEditDialog(false);
   };
 
-  // Save edited order
-  const handleSaveEdit = async () => {
-    try {
-      await axios.put(`/api/orders/${orderToEdit.orderID}`, orderToEdit);
-      setOrders(orders.map(order => order.orderID === orderToEdit.orderID ? orderToEdit : order));
-      setFilteredOrders(filteredOrders.map(order => order.orderID === orderToEdit.orderID ? orderToEdit : order));
+  const handleSaveEdit = () => {
+    if (editDate && editStatus) {
+      const updatedOrder = {
+        ...orderToEdit,
+        createdAt: editDate.toISOString().slice(0, 10),
+        status: editStatus,
+      };
+      setOrders(
+        orders.map((order) =>
+          order._id === orderToEdit._id ? updatedOrder : order
+        )
+      );
+      setFilteredOrders(
+        filteredOrders.map((order) =>
+          order._id === orderToEdit._id ? updatedOrder : order
+        )
+      );
       handleCloseEditDialog();
-    } catch (error) {
-      console.error('Error updating order:', error);
     }
   };
 
-  // Open delete dialog
   const handleOpenDeleteDialog = (orderId) => {
     setOrderToDelete(orderId);
     setOpenDeleteDialog(true);
   };
 
-  // Close delete dialog
   const handleCloseDeleteDialog = () => {
     setOrderToDelete(null);
     setOpenDeleteDialog(false);
   };
 
-  // Delete order
-  const handleDeleteOrder = async () => {
-    try {
-      await axios.delete(`/api/orders/${orderToDelete}`);
-      setOrders(orders.filter(order => order.orderID !== orderToDelete));
-      setFilteredOrders(filteredOrders.filter(order => order.orderID !== orderToDelete));
-      handleCloseDeleteDialog();
-    } catch (error) {
-      console.error('Error deleting order:', error);
+  const handleDeleteOrder = () => {
+    setOrders(orders.filter((order) => order._id !== orderToDelete));
+    setFilteredOrders(
+      filteredOrders.filter((order) => order._id !== orderToDelete)
+    );
+    handleCloseDeleteDialog();
+  };
+
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value);
+    if (event.target.value) {
+      setFilteredOrders(
+        orders.filter((order) => order.status === event.target.value)
+      );
+    } else {
+      setFilteredOrders(orders);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Shipped":
+        return blue[500];
+      case "Ordered":
+        return yellow[700];
+      case "Delivered":
+        return green[500];
+      case "Cancelled":
+        return red[500];
+      default:
+        return "#000";
     }
   };
 
   return (
-    <Paper sx={{ padding: 3, backgroundColor: 'white', minHeight: '81vh', marginTop: 2, marginLeft: 2, marginRight: 2, borderRadius: 2, boxShadow: 3 }}>
-      <Grid container alignItems="center" justifyContent="space-between" sx={{ marginBottom: 2, marginTop: 2 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#9E4BDC' }}>Order Management</Typography>
-        <Button
-          variant="contained"
-          sx={{ backgroundColor: '#9E4BDC', '&:hover': { backgroundColor: '#7B3CB8' } }}
-          onClick={() => navigate('/add-order')}
-        >
-          Create Order
-        </Button>
-      </Grid>
-
-      {/* Search Bars */}
-      <Grid container spacing={2} sx={{ marginBottom: 2 }}>
-        <Grid item xs={4}>
-          <TextField
-            fullWidth
-            label="Search by Customer Name"
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-          />
+    <Paper
+      sx={{
+        padding: 3,
+        backgroundColor: "white",
+        minHeight: "81vh",
+        marginTop: 2,
+        marginLeft: 2,
+        marginRight: 2,
+        borderRadius: 2,
+        boxShadow: 3,
+      }}
+    >
+      <Grid
+        container
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={1}
+        sx={{ marginBottom: 2, marginTop: 2 }}
+      >
+        <Grid item>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: "bold", color: "#9E4BDC" }}
+          >
+            Order Management
+          </Typography>
         </Grid>
-        <Grid item xs={4}>
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker
-              label="Search by Date"
-              value={searchDate}
-              onChange={(newValue) => setSearchDate(newValue)}
-              renderInput={(params) => <TextField {...params} fullWidth />}
-            />
-          </LocalizationProvider>
-        </Grid>
-        <Grid item xs={4}>
-          <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              label="Status"
-            >
-              <MenuItem value="All">All</MenuItem>
+        <Grid item sx={{ minWidth: 250 }}>
+          <FormControl fullWidth size="Medium">
+            <InputLabel>Filter by status </InputLabel>
+            <Select value={statusFilter} onChange={handleStatusFilterChange}>
+              <MenuItem value="">All</MenuItem>
               <MenuItem value="Ordered">Ordered</MenuItem>
-              <MenuItem value="Packed">Packed</MenuItem>
               <MenuItem value="Shipped">Shipped</MenuItem>
               <MenuItem value="Delivered">Delivered</MenuItem>
+              <MenuItem value="Cancelled">Cancelled</MenuItem>
             </Select>
           </FormControl>
         </Grid>
       </Grid>
 
-      {/* Orders Table */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -202,20 +221,26 @@ function OrderManagement() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((order) => (
-              <TableRow key={order.orderID}>
-                <TableCell>{order.orderID}</TableCell>
-                <TableCell>{order.Date}</TableCell>
-                <TableCell>{order.Status}</TableCell>
-                <TableCell>{order.CustomerName}</TableCell>
-                <TableCell>{order.Items}</TableCell>
-                <TableCell>{order.Total}</TableCell>
-                <TableCell>{order.PayMethod}</TableCell>
+            {filteredOrders.map((order) => (
+              <TableRow key={order._id} hover>
+                <TableCell sx={{ fontWeight: "bold", color: "#9E4BDC" }}>
+                  {order._id}
+                </TableCell>
+                <TableCell>{order.createdAt}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleOpenEditDialog(order.orderID)}>
+                  <Typography sx={{ color: getStatusColor(order.status) }}>
+                    {order.status}
+                  </Typography>
+                </TableCell>
+                <TableCell>{order.customerName}</TableCell>
+                <TableCell>{order.items?.length || 0} items</TableCell>
+                <TableCell>{order.total?.toFixed(2)}</TableCell>
+                <TableCell>{order.paymentMethod}</TableCell>
+                <TableCell>
+                  <IconButton onClick={() => handleOpenEditDialog(order)}>
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleOpenDeleteDialog(order.orderID)}>
+                  <IconButton onClick={() => handleOpenDeleteDialog(order._id)}>
                     <DeleteIcon color="error" />
                   </IconButton>
                 </TableCell>
@@ -225,38 +250,146 @@ function OrderManagement() {
         </Table>
       </TableContainer>
 
-      {/* Pagination */}
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[5, 10, 15]}
         component="div"
         count={filteredOrders.length}
         rowsPerPage={rowsPerPage}
         page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
       />
 
-      {/* Edit Dialog */}
       <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
-        <DialogTitle>Edit Order</DialogTitle>
+        <DialogTitle>
+          Edit Order
+          <IconButton onClick={handleCloseEditDialog} sx={{ color: "#9E4BDC" }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
-          {/* Add your edit form fields here */}
+          <Grid container spacing={2}>
+            <Grid item xs={12} sx={{ color: "#CE58A9" }}>
+              <Typography variant="h6">Order ID: {orderToEdit?._id}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Customer Name"
+                value={orderToEdit?.customerName || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Items"
+                value={
+                  orderToEdit?.items?.map((item) => item.name).join(", ") || ""
+                }
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Size"
+                value={orderToEdit?.size || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Count"
+                value={orderToEdit?.count || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Color"
+                value={orderToEdit?.color || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="Order Date"
+                  value={editDate}
+                  onChange={(newValue) => setEditDate(newValue)}
+                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  disabled
+                />
+              </LocalizationProvider>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                >
+                  <MenuItem value="Ordered">Ordered</MenuItem>
+                  <MenuItem value="Shipped">Shipped</MenuItem>
+                  <MenuItem value="Delivered">Delivered</MenuItem>
+                  <MenuItem value="Cancelled">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button onClick={handleSaveEdit}>Save</Button>
+          <Button
+            onClick={handleCloseEditDialog}
+            sx={{ backgroundColor: "#9E4BDC", color: "white" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveEdit}
+            sx={{ backgroundColor: "#CE58A9", color: "white" }}
+          >
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Dialog */}
       <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
         <DialogTitle>Delete Order</DialogTitle>
         <DialogContent>
           Are you sure you want to delete this order?
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleDeleteOrder} color="error">Delete</Button>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            sx={{ backgroundColor: "#9E4BDC", color: "white" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteOrder}
+            sx={{ backgroundColor: "#CE58A9", color: "white" }}
+          >
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Paper>
