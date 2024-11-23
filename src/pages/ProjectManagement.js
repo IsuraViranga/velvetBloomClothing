@@ -8,17 +8,18 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { productList } from '../TemporaryData/productManagementData';
 
-// Generate mock data (50 clothing items) with categories
-const mockCategories = ['Shirts', 'Pants', 'Dresses', 'Accessories', 'Shoes'];
-const mockProducts = Array.from({ length: 50 }, (_, i) => ({
-  _id: `product_${i + 1}`,
-  productName: `${mockCategories[Math.floor(Math.random() * mockCategories.length)]} ${i + 1}`,
-  AvailableCount: Math.floor(Math.random() * 100),
-  LowStockCount: 20,
-  unitPrice: (Math.random() * 100 + 10).toFixed(2), 
-  categories: [mockCategories[Math.floor(Math.random() * mockCategories.length)]], 
-}));
+function transformProductData(productList) {
+  return productList.map(product => ({
+    _id: product._id.$oid || product._id,
+    productName: product.productName,
+    AvailableCount: product.productCount,
+    LowStockCount: product.lowStockCount,
+    unitPrice: product.unitPrice,
+    categories: product.categories
+  }));
+}
 
 function ProjectManagement() {
   const navigate = useNavigate();
@@ -56,13 +57,18 @@ function ProjectManagement() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const paginatedProducts = mockProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-        setProducts(mockProducts); 
+        // const response = await axios.get('YOUR_API_ENDPOINT_HERE', {
+        //   headers: {
+        //     Authorization: `Bearer YOUR_TOKEN_HERE`
+        //   }
+        // });        
+        // const productList = response.data;
+        const ArrangedProducts = transformProductData(productList);
+        const paginatedProducts = ArrangedProducts.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+        setProducts(ArrangedProducts); 
         setFilteredProducts(paginatedProducts); 
       } catch (error) {
         console.error('Error fetching products:', error);
-        setProducts(mockProducts); 
-        setFilteredProducts(mockProducts);
       }
     }
     fetchProducts();
@@ -83,7 +89,6 @@ function ProjectManagement() {
         category.toLowerCase().includes(searchCategory.toLowerCase())
       );
       const matchesStatus = status === 'All' || getStatus(product.AvailableCount, product.LowStockCount) === status;
-      
       return matchesName && matchesCategory && matchesStatus;
     });
     setFilteredProducts(filtered);

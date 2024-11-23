@@ -1,16 +1,28 @@
 import React, { useState } from 'react';
-import { Paper, Typography, TextField, Button, Box, Dialog, DialogActions, DialogTitle, DialogContent } from '@mui/material';
-import { useNavigate } from 'react-router-dom'; 
+import {
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Dialog,
+  DialogActions,
+  DialogTitle,
+  DialogContent,
+  Snackbar,
+  Alert,
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function AddCategory() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
-  // State variables for form inputs
   const [categoryName, setCategoryName] = useState('');
   const [description, setDescription] = useState('');
   const [mainImage, setMainImage] = useState(null);
-  const [openSuccessDialog, setOpenSuccessDialog] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
 
   // Handle change for the category name
   const handleCategoryNameChange = (e) => setCategoryName(e.target.value);
@@ -21,14 +33,51 @@ function AddCategory() {
   // Handle file input change for the image
   const handleImageChange = (e) => setMainImage(e.target.files[0]);
 
-  // Handle the add button click
-  const handleAddCategory = async () => {
-    if (!categoryName || !description || !mainImage) {
-      alert('Please fill in all fields and upload an image');
-      return;
+  // Validate form inputs
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Regular expressions
+    const lettersOnlyRegex = /^[a-zA-Z\s]+$/;
+
+    // Validate category name
+    if (!categoryName.trim()) {
+      newErrors.categoryName = 'Category name cannot be empty.';
+    } else if (categoryName.trim().length < 2) {
+      newErrors.categoryName = 'Category name must be at least 2 characters.';
+    } else if (!lettersOnlyRegex.test(categoryName)) {
+      newErrors.categoryName = 'Category name can only contain letters.';
     }
 
-    // Prepare FormData to send the data as multipart form data
+    // Validate description
+    if (!description.trim()) {
+      newErrors.description = 'Description cannot be empty.';
+    } else if (description.trim().length < 2) {
+      newErrors.description = 'Description must be at least 2 characters.';
+    } else if (!lettersOnlyRegex.test(description)) {
+      newErrors.description = 'Description can only contain letters.';
+    }
+
+    // Validate image
+    if (!mainImage) {
+      newErrors.mainImage = 'Main image cannot be empty.';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle the add button click
+  const handleAddCategory = async () => {
+    if (!validateForm()){
+      setSnackbar({
+        open: true,
+        message: 'Please fix the errors before adding.',
+        severity: 'error',
+      });
+      return;
+    };
+
     const formData = new FormData();
     formData.append('categoryName', categoryName);
     formData.append('description', description);
@@ -41,20 +90,20 @@ function AddCategory() {
         },
       });
       if (response.status === 200) {
-        setOpenSuccessDialog(true);
+        setSnackbar({ open: true, message: 'Category added successfully!', severity: 'success' });
       }
     } catch (error) {
       console.error('There was an error adding the category!', error);
-      alert('Error adding category. Please try again.');
+      setSnackbar({ open: true, message: 'Error adding category. Please try again.', severity: 'error' });
     }
   };
 
-  // Close the success dialog
-  const handleCloseSuccessDialog = () => setOpenSuccessDialog(false);
+  // Close the snackbar
+  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   // Navigate back to the category page using navigate
   const handleBack = () => {
-    navigate('/category'); 
+    navigate('/category');
   };
 
   return (
@@ -69,8 +118,8 @@ function AddCategory() {
         borderRadius: 2,
         boxShadow: 3,
         display: 'flex',
-        flexDirection: 'column', 
-        justifyContent: 'space-between', 
+        flexDirection: 'column',
+        justifyContent: 'space-between',
       }}
     >
       <Box sx={{ flex: 1 }}>
@@ -84,6 +133,8 @@ function AddCategory() {
           sx={{ marginTop: 2 }}
           value={categoryName}
           onChange={handleCategoryNameChange}
+          error={!!errors.categoryName}
+          helperText={errors.categoryName || ''}
         />
         <TextField
           label="Description"
@@ -94,6 +145,8 @@ function AddCategory() {
           sx={{ marginTop: 2 }}
           value={description}
           onChange={handleDescriptionChange}
+          error={!!errors.description}
+          helperText={errors.description || ''}
         />
       </Box>
 
@@ -107,6 +160,11 @@ function AddCategory() {
           onChange={handleImageChange}
           style={{ marginTop: 10 }}
         />
+        {errors.mainImage && (
+          <Typography variant="body2" color="error" sx={{ marginTop: 1 }}>
+            {errors.mainImage}
+          </Typography>
+        )}
       </Box>
 
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
@@ -118,18 +176,17 @@ function AddCategory() {
         </Button>
       </Box>
 
-      {/* Success Dialog */}
-      <Dialog open={openSuccessDialog} onClose={handleCloseSuccessDialog}>
-        <DialogTitle>Category Added</DialogTitle>
-        <DialogContent>
-          <Typography>Category has been added successfully!</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseSuccessDialog} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Snackbar for success/failure messages */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 }
