@@ -67,7 +67,7 @@ function Sidebar() {
           {[ 
             { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
             { label: 'Product Management', icon: <AssignmentIcon />, path: '/project-management' },
-            { label: 'Category', icon: <CategoryIcon />, path: '/category' },
+            { label: 'Category Management', icon: <CategoryIcon />, path: '/category' },
             { label: 'Order Management', icon: <ShoppingCartIcon />, path: '/order-management' },
           ].map((item) => (
             <ListItem

@@ -17,7 +17,7 @@ function Category() {
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [categoryToEdit, setCategoryToEdit] = useState(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const navigate = useNavigate();  
 
@@ -160,15 +160,15 @@ function Category() {
           </TableHead>
           <TableBody>
             {filteredCategories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((category) => (
-              <TableRow key={category.categoryID}>
+              <TableRow key={category.categoryID} data-testid="category-row">
                 <TableCell>{category.category_name}</TableCell>
                 <TableCell>{category.description}</TableCell>
                 <TableCell>{category.NumberOfProducts}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => handleOpenEditDialog(category)}>
+                  <IconButton onClick={() => handleOpenEditDialog(category)} data-testid={`EditIcon`} >
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleOpenDeleteDialog(category)}>
+                  <IconButton onClick={() => handleOpenDeleteDialog(category)} data-testid={`DeleteIcon`}>
                     <DeleteIcon color="error" />
                   </IconButton>
                 </TableCell>
@@ -180,7 +180,7 @@ function Category() {
 
       {/* Pagination */}
       <TablePagination
-        rowsPerPageOptions={[10, 25, 50]}
+        rowsPerPageOptions={[5, 10, 20]}
         component="div"
         count={filteredCategories.length}
         rowsPerPage={rowsPerPage}
@@ -223,10 +223,10 @@ function Category() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEditDialog} color="primary">
+          <Button onClick={handleCloseEditDialog} color="primary" data-testid="CancelButton">
             Cancel
           </Button>
-          <Button onClick={handleUpdateCategory} color="secondary">
+          <Button onClick={handleUpdateCategory} color="secondary" data-testid="SaveButton">
             Save
           </Button>
         </DialogActions>
