@@ -180,6 +180,62 @@ export const productList = [
       "reviews": [],
       "createdAt": "2024-11-16T11:00:00Z",
       "updatedAt": "2024-11-16T11:00:00Z"
+    },
+    {
+      "_id": "673bca3d94cb650c9b688e21",
+      "productName": "winter Shorts",
+      "description": "Lightweight shorts for summer activities.",
+      "brand": "nightWear",
+      "discount": 18,
+      "unitPrice": 20,
+      "productCount": 10,
+      "lowStockCount": 20,
+      "mainImgUrl": "https://example.com/images/shorts-main.jpg",
+      "imageGallery": [
+        "https://example.com/images/shorts-front.jpg",
+        "https://example.com/images/shorts-back.jpg"
+      ],
+      "categories": ["Clothing", "Men", "Shorts"],
+      "variety": [
+        {
+          "size": "M",
+          "colors": [
+            { "color": "Beige", "count": 5 },
+            { "color": "Navy Blue", "count": 5 }
+          ]
+        }
+      ],
+      "reviews": [],
+      "createdAt": "2024-11-16T11:00:00Z",
+      "updatedAt": "2024-11-16T11:00:00Z"
+    },
+    {
+      "_id": "673bca3d94cb650c9b688e22",
+      "productName": "lighwinter Shorts",
+      "description": "Lightweight shorts for summer activities.",
+      "brand": "nightWear",
+      "discount": 18,
+      "unitPrice": 20,
+      "productCount": 10,
+      "lowStockCount": 20,
+      "mainImgUrl": "https://example.com/images/shorts-main.jpg",
+      "imageGallery": [
+        "https://example.com/images/shorts-front.jpg",
+        "https://example.com/images/shorts-back.jpg"
+      ],
+      "categories": ["Clothing", "Men", "Shorts"],
+      "variety": [
+        {
+          "size": "M",
+          "colors": [
+            { "color": "Beige", "count": 5 },
+            { "color": "Navy Blue", "count": 5 }
+          ]
+        }
+      ],
+      "reviews": [],
+      "createdAt": "2024-11-16T11:00:00Z",
+      "updatedAt": "2024-11-16T11:00:00Z"
     }
   ];
   

@@ -110,28 +110,6 @@ describe('Category Page Action', () => {
     cy.get('[role="dialog"]').should('not.be.visible');
   });
 
-  // it('Should open the edit dialog when the edit icon is clicked, save the changes, and close the dialog', () => {
-  //   // Click the edit icon for the first category
-  //   cy.get('[data-testid="EditIcon"]').first().click();
-    
-  //   // Verify that the edit dialog is open
-  //   cy.get('[role="dialog"]').should('be.visible');
-    
-  //   // Enter new values in the input fields (you can simulate the change)
-  //   cy.get('input[name="category_name"]').clear().type('New Category Name'); // Adjust input field selector as needed
-  //   cy.get('textarea[name="description"]').clear().type('Updated Description'); // Adjust input field selector as needed
-    
-  //   // Click the save button to save the changes
-  //   cy.get('[data-testid="SaveButton"]').click();
-    
-  //   // Verify that the dialog is closed after saving
-  //   cy.get('[role="dialog"]').should('not.be.visible');
-    
-  //   // Optional: Verify that the changes are reflected in the UI (you can verify the updated category name or description)
-  //   cy.contains('New Category Name').should('be.visible');
-  //   cy.contains('Updated Description').should('be.visible');
-  // });  
-
   it('Should open the edit dialog, edit category details, save changes, and close the dialog', () => {
     // Step 1: Click the edit icon for the first category
     cy.get('[data-testid="EditIcon"]').first().click();
@@ -149,7 +127,6 @@ describe('Category Page Action', () => {
     //cy.get('[role="dialog"]').should('not.be.visible');
     
   });
-  
   
   it('Should navigate between pages and verify page changes', () => {
 

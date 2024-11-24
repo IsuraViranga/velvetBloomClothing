@@ -9,7 +9,7 @@ import axios from 'axios';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { productList } from '../TemporaryData/productManagementData';
-
+ 
 function transformProductData(productList) {
   return productList.map(product => ({
     _id: product._id.$oid || product._id,
@@ -33,7 +33,7 @@ function ProjectManagement() {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchName, setSearchName] = useState('');
   const [searchCategory, setSearchCategory] = useState('');
   const [status, setStatus] = useState('All');
@@ -206,17 +206,17 @@ function ProjectManagement() {
           </TableHead>
           <TableBody>
             {filteredProducts.map((product) => (
-              <TableRow key={product._id}>
+              <TableRow key={product._id} data-testid="product-row">
                 <TableCell>{product.productName}</TableCell>
                 <TableCell>{product.AvailableCount}</TableCell>
                 <TableCell>{product.LowStockCount}</TableCell>
                 <TableCell>{product.unitPrice}</TableCell>
                 <TableCell>{getStatus(product.AvailableCount, product.LowStockCount)}</TableCell>
                 <TableCell>
-                  <IconButton onClick={() => navigate(`/edit-product/${product._id}`)}>
+                  <IconButton onClick={() => navigate(`/edit-product/${product._id}`)} data-testid="EditIcon">
                     <EditIcon />
                   </IconButton>
-                  <IconButton onClick={() => handleOpenDeleteDialog(product._id)}>
+                  <IconButton onClick={() => handleOpenDeleteDialog(product._id)} data-testid="DeleteIcon">
                     <DeleteIcon color="error" />
                   </IconButton>
                 </TableCell>
@@ -228,7 +228,7 @@ function ProjectManagement() {
 
       {/* Pagination */}
       <TablePagination
-        rowsPerPageOptions={[10, 25, 50]}
+        rowsPerPageOptions={[5, 10, 20]}
         component="div"
         count={filteredProducts.length}
         rowsPerPage={rowsPerPage}
