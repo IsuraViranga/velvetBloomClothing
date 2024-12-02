@@ -1,91 +1,166 @@
-import React, { useReducer } from 'react';
-import { Paper, Typography, TextField, Button, MenuItem, IconButton } from '@mui/material';
-import { Container, Row, Col } from 'react-bootstrap';
-import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
-import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
+import React, { useState } from "react";
+import {
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Grid,
+  Button,
+  TextField,
+  Select,
+  InputLabel,
+  FormControl,
+  MenuItem,
+  IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  TablePagination,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { DatePicker } from "@mui/lab";
+import AdapterDateFns from "@mui/lab/AdapterDateFns";
+import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import CloseIcon from "@mui/icons-material/Close";
+import { blue, red, green, yellow } from "@mui/material/colors";
 
-const initialState = {
-  productName: '',
-  category: '',
-  lowStockCount: 0,
-  brand: '',
-  unitPrice: 0,
-  discount: 0,
-  visibility: '',
-  description: '',
-  productStatus: 'active',
-  mainImage: null,
-  galleryImages: [],
-  variations: [],
-};
- 
-function reducer(state, action) {
-  switch (action.type) {
-    case 'SET_FIELD':
-      return { ...state, [action.field]: action.value };
-    case 'SET_MAIN_IMAGE':
-      return { ...state, mainImage: action.value };
-    case 'ADD_GALLERY_IMAGE':
-      return { ...state, galleryImages: [...state.galleryImages, action.value] };
-    case 'REMOVE_GALLERY_IMAGE':
-      return {
-        ...state,
-        galleryImages: state.galleryImages.filter((_, index) => index !== action.index),
+function OrderManagement() {
+  const navigate = useNavigate();
+  const [orders, setOrders] = useState([
+    {
+      _id: "1",
+      createdAt: "2024-11-15",
+      status: "Shipped",
+      customerName: "Cody Fisher",
+      items: [{ name: "Hoody", price: 12.5 }],
+      color: "Red",
+      size: "M",
+      count: 2,
+      total: 25.0,
+      paymentMethod: "Card",
+    },
+    {
+      _id: "2",
+      createdAt: "2024-11-18",
+      status: "Ordered",
+      customerName: "Jane Doe",
+      items: [{ name: "Hoody", price: 12.5 }],
+      color: "Blue",
+      size: "L",
+      count: 1,
+      total: 25.0,
+      paymentMethod: "Cash",
+    },
+  ]);
+  const [filteredOrders, setFilteredOrders] = useState(orders);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [orderToEdit, setOrderToEdit] = useState(null);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [editDate, setEditDate] = useState(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
+  const [page, setPage] = useState(0); // Current page index
+  const [rowsPerPage, setRowsPerPage] = useState(5); // Rows per page
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset to first page
+  };
+
+  const displayedOrders = filteredOrders.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const handleOpenEditDialog = (order) => {
+    setOrderToEdit(order);
+    setEditDate(new Date(order.createdAt));
+    setEditStatus(order.status);
+    setOpenEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setOrderToEdit(null);
+    setEditDate(null);
+    setEditStatus("");
+    setOpenEditDialog(false);
+  };
+
+  const handleSaveEdit = () => {
+    if (editDate && editStatus) {
+      const updatedOrder = {
+        ...orderToEdit,
+        createdAt: editDate.toISOString().slice(0, 10),
+        status: editStatus,
       };
-    case 'ADD_VARIATION':
-      return {
-        ...state,
-        variations: [
-          ...state.variations,
-          { size: '', colors: [{ color: '', count: 0 }] },
-        ],
-      };
-    case 'SET_VARIATION_SIZE':
-      const updatedVariations = [...state.variations];
-      updatedVariations[action.index].size = action.value;
-      return { ...state, variations: updatedVariations };
-    case 'SET_COLOR_COUNT':
-      const updatedVariationsColor = [...state.variations];
-      updatedVariationsColor[action.index].colors[action.colorIndex][action.field] =
-        action.value;
-      return { ...state, variations: updatedVariationsColor };
-    case 'ADD_COLOR':
-      const newVariationWithColor = [...state.variations];
-      newVariationWithColor[action.index].colors.push({ color: '', count: 0 });
-      return { ...state, variations: newVariationWithColor };
-    default:
-      return state;
-  }
-}
+      setOrders(
+        orders.map((order) =>
+          order._id === orderToEdit._id ? updatedOrder : order
+        )
+      );
+      setFilteredOrders(
+        filteredOrders.map((order) =>
+          order._id === orderToEdit._id ? updatedOrder : order
+        )
+      );
+      handleCloseEditDialog();
+    }
+  };
 
-function AddProduct() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const handleOpenDeleteDialog = (orderId) => {
+    setOrderToDelete(orderId);
+    setOpenDeleteDialog(true);
+  };
 
-  const handleSubmit = async () => {
-    try {
-      const formData = new FormData();
-      formData.append('productName', state.productName);
-      formData.append('category', state.category);
-      formData.append('lowStockCount', state.lowStockCount);
-      formData.append('brand', state.brand);
-      formData.append('unitPrice', state.unitPrice);
-      formData.append('discount', state.discount);
-      formData.append('visibility', state.visibility);
-      formData.append('description', state.description);
-      formData.append('productStatus', state.productStatus);
-      formData.append('mainImage', state.mainImage);
-      state.galleryImages.forEach((image, index) => {
-        formData.append(`galleryImages[${index}]`, image);
-      });
-      formData.append('variations', JSON.stringify(state.variations)); 
+  const handleCloseDeleteDialog = () => {
+    setOrderToDelete(null);
+    setOpenDeleteDialog(false);
+  };
 
-      const response = await axios.post('/api/products', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      alert('Product added successfully!');
-    } catch (error) {
-      console.error('Failed to add product:', error);
+  const handleDeleteOrder = () => {
+    setOrders(orders.filter((order) => order._id !== orderToDelete));
+    setFilteredOrders(
+      filteredOrders.filter((order) => order._id !== orderToDelete)
+    );
+    handleCloseDeleteDialog();
+  };
+
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value);
+    if (event.target.value) {
+      setFilteredOrders(
+        orders.filter((order) => order.status === event.target.value)
+      );
+    } else {
+      setFilteredOrders(orders);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Shipped":
+        return blue[500];
+      case "Ordered":
+        return yellow[700];
+      case "Delivered":
+        return green[500];
+      case "Cancelled":
+        return red[500];
+      default:
+        return "#000";
     }
   };
 
@@ -93,8 +168,8 @@ function AddProduct() {
     <Paper
       sx={{
         padding: 3,
-        backgroundColor: 'white',
-        minHeight: '86vh',
+        backgroundColor: "white",
+        minHeight: "81vh",
         marginTop: 2,
         marginLeft: 2,
         marginRight: 2,
@@ -102,231 +177,223 @@ function AddProduct() {
         boxShadow: 3,
       }}
     >
-      <Typography variant="h4" sx={{ color: '#9E4BDC', fontWeight: 'bold', marginLeft: 1 }}>
-        New Product
-      </Typography>
-      <Container className="mt-4">
-        <Row>
-          <Col md={6} sm={12}>
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold' }}>Product Name</Typography>
-            <TextField
-              fullWidth
-              value={state.productName}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'productName', value: e.target.value })}
-              sx={{ marginTop: 1 }}
-            />
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Category</Typography>
-            <TextField
-              fullWidth
-              select
-              value={state.category}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'category', value: e.target.value })}
-              sx={{ marginTop: 1 }}
-            >
-              <MenuItem value="Electronics">Electronics</MenuItem>
-              <MenuItem value="Apparel">Apparel</MenuItem>
-            </TextField>
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Low Stock Count</Typography>
-            <TextField
-              fullWidth
-              type="number"
-              value={state.lowStockCount}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'lowStockCount', value: Number(e.target.value) })}
-              sx={{ marginTop: 1 }}
-            />
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Unit Price</Typography>
-            <TextField
-              fullWidth
-              type="number"
-              value={state.unitPrice}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'unitPrice', value: Number(e.target.value) })}
-              sx={{ marginTop: 1 }}
-            />
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Description</Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              value={state.description}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })}
-              sx={{ marginTop: 1 }}
-            />
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Product Status</Typography>
-            <TextField
-              fullWidth
-              select
-              value={state.productStatus}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'productStatus', value: e.target.value })}
-              sx={{ marginTop: 1 }}
-            >
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </TextField>
-          </Col>
-          <Col md={6} sm={12}>
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Discount</Typography>
-            <TextField
-              fullWidth
-              type="number"
-              value={state.discount}
-              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'discount', value: Number(e.target.value) })}
-              sx={{ marginTop: 1 }}
-            />
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold' }}>Product Main Image</Typography>
-            <TextField
-              fullWidth
-              type="file"
-              inputProps={{ accept: 'image/*' }}
-              onChange={(e) => dispatch({ type: 'SET_MAIN_IMAGE', value: e.target.files[0] })}
-              sx={{ marginTop: 1 }}
-            />
-            {state.mainImage && (
-              <div style={{ position: 'relative', marginTop: '10px' }}>
-                <img
-                  src={URL.createObjectURL(state.mainImage)}
-                  alt="Main Product"
-                  style={{ width: '40%', height: 'auto', borderRadius: '4px' }}
-                />
-                <IconButton
-                  onClick={() => dispatch({ type: 'SET_MAIN_IMAGE', value: null })}
-                  style={{
-                    position: 'absolute',
-                    top: '5px',
-                    right: '5px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  }}
-                >
-                  <DeleteIcon color="error" />
-                </IconButton>
-              </div>
-            )}
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Product Gallery</Typography>
-            <TextField
-              fullWidth
-              type="file"
-              inputProps={{ accept: 'image/*', multiple: true }}
-              onChange={(e) => {
-                Array.from(e.target.files).forEach((file) =>
-                  dispatch({ type: 'ADD_GALLERY_IMAGE', value: file })
-                );
-              }}
-              sx={{ marginTop: 1 }}
-            />
-            <Row className="mt-2">
-              {state.galleryImages.map((image, index) => (
-                <Col xs={4} key={index} style={{ position: 'relative', marginBottom: '10px' }}>
-                  <img
-                    src={URL.createObjectURL(image)}
-                    alt={`gallery-${index}`}
-                    style={{ width: '100%', height: 'auto', borderRadius: '4px' }}
-                  />
-                  <IconButton
-                    onClick={() => dispatch({ type: 'REMOVE_GALLERY_IMAGE', index })}
-                    style={{
-                      position: 'absolute',
-                      top: '5px',
-                      right: '5px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                    }}
-                  >
+      <Grid
+        container
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={1}
+        sx={{ marginBottom: 2, marginTop: 2 }}
+      >
+        <Grid item>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: "bold", color: "#9E4BDC" }}
+          >
+            Order Management
+          </Typography>
+        </Grid>
+        <Grid item sx={{ minWidth: 250 }}>
+          <FormControl fullWidth size="Medium">
+            <InputLabel>Filter by status </InputLabel>
+            <Select value={statusFilter} onChange={handleStatusFilterChange}>
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="Ordered">Ordered</MenuItem>
+              <MenuItem value="Shipped">Shipped</MenuItem>
+              <MenuItem value="Delivered">Delivered</MenuItem>
+              <MenuItem value="Cancelled">Cancelled</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Order ID</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Customer Name</TableCell>
+              <TableCell>Items</TableCell>
+              <TableCell>Total (LKR)</TableCell>
+              <TableCell>Payment Method</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredOrders.map((order) => (
+              <TableRow key={order._id} hover>
+                <TableCell sx={{ fontWeight: "bold", color: "#9E4BDC" }}>
+                  {order._id}
+                </TableCell>
+                <TableCell>{order.createdAt}</TableCell>
+                <TableCell>
+                  <Typography sx={{ color: getStatusColor(order.status) }}>
+                    {order.status}
+                  </Typography>
+                </TableCell>
+                <TableCell>{order.customerName}</TableCell>
+                <TableCell>{order.items?.length || 0} items</TableCell>
+                <TableCell>{order.total?.toFixed(2)}</TableCell>
+                <TableCell>{order.paymentMethod}</TableCell>
+                <TableCell>
+                  <IconButton onClick={() => handleOpenEditDialog(order)}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => handleOpenDeleteDialog(order._id)}>
                     <DeleteIcon color="error" />
                   </IconButton>
-                </Col>
-              ))}
-            </Row>
-            <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 4 }}>
-              Product Variation
-            </Typography>
-            <Button
-              variant="outlined"
-              onClick={() => dispatch({ type: 'ADD_VARIATION' })}
-              sx={{ marginTop: 2 ,marginLeft: 2}}
-            >
-              Add Variation
-            </Button>
-            {state.variations.map((variation, index) => (
-              <div key={index}>
-                <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
-                  Size
-                </Typography>
-                <TextField
-                  fullWidth
-                  select
-                  value={variation.size}
-                  onChange={(e) =>
-                    dispatch({ type: 'SET_VARIATION_SIZE', index, value: e.target.value })
-                  }
-                  sx={{ marginTop: 1 }}
-                >
-                  <MenuItem value="Small">Small</MenuItem>
-                  <MenuItem value="Medium">Medium</MenuItem>
-                  <MenuItem value="Large">Large</MenuItem>
-                  <MenuItem value="XL">XL</MenuItem>
-                  <MenuItem value="XXL">XXL</MenuItem>
-                </TextField>
-
-                {variation.colors.map((color, colorIndex) => (
-                  <div key={colorIndex}>
-                    <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
-                      Color
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      label="Color"
-                      value={color.color}
-                      onChange={(e) =>
-                        dispatch({
-                          type: 'SET_COLOR_COUNT',
-                          index,
-                          colorIndex,
-                          field: 'color',
-                          value: e.target.value,
-                        })
-                      }
-                      sx={{ marginTop: 1 }}
-                    />
-                    <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
-                      Count
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      value={color.count}
-                      onChange={(e) =>
-                        dispatch({
-                          type: 'SET_COLOR_COUNT',
-                          index,
-                          colorIndex,
-                          field: 'count',
-                          value: e.target.value,
-                        })
-                      }
-                      sx={{ marginTop: 1 }}
-                    />
-                  </div>
-                ))}
-
-                <Button
-                  variant="outlined"
-                  onClick={() => dispatch({ type: 'ADD_COLOR', index })}
-                  sx={{ marginTop: 2 }}
-                >
-                  Add Color
-                </Button>
-              </div>
+                </TableCell>
+              </TableRow>
             ))}
-          </Col>
-        </Row>
-        <Button
-          variant="contained"
-          sx={{ marginTop: 3, backgroundColor: '#9E4BDC' }}
-          onClick={handleSubmit}
-        >
-          Add New Product
-        </Button>
-      </Container>
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 15]}
+        component="div"
+        count={filteredOrders.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+      />
+
+      <Dialog open={openEditDialog} onClose={handleCloseEditDialog}>
+        <DialogTitle>
+          Edit Order
+          <IconButton onClick={handleCloseEditDialog} sx={{ color: "#9E4BDC" }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sx={{ color: "#CE58A9" }}>
+              <Typography variant="h6">Order ID: {orderToEdit?._id}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Customer Name"
+                value={orderToEdit?.customerName || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                label="Items"
+                value={
+                  orderToEdit?.items?.map((item) => item.name).join(", ") || ""
+                }
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Size"
+                value={orderToEdit?.size || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Count"
+                value={orderToEdit?.count || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={4}>
+              <TextField
+                label="Color"
+                value={orderToEdit?.color || ""}
+                fullWidth
+                InputProps={{
+                  readOnly: true,
+                }}
+                disabled
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="Order Date"
+                  value={editDate}
+                  onChange={(newValue) => setEditDate(newValue)}
+                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  disabled
+                />
+              </LocalizationProvider>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                >
+                  <MenuItem value="Ordered">Ordered</MenuItem>
+                  <MenuItem value="Shipped">Shipped</MenuItem>
+                  <MenuItem value="Delivered">Delivered</MenuItem>
+                  <MenuItem value="Cancelled">Cancelled</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseEditDialog}
+            sx={{ backgroundColor: "#9E4BDC", color: "white" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveEdit}
+            sx={{ backgroundColor: "#CE58A9", color: "white" }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Delete Order</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this order?
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            sx={{ backgroundColor: "#9E4BDC", color: "white" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteOrder}
+            sx={{ backgroundColor: "#CE58A9", color: "white" }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 }
 
-export default AddProduct;
+export default OrderManagement;

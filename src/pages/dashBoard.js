@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Paper,
   Typography,
@@ -13,6 +13,7 @@ import {
   Box,
 } from "@mui/material";
 import { styled } from "@mui/system";
+import axios from "axios"; // Axios for API calls
 
 // Styled components for cards and table cells
 const StyledCard = styled(Card)(({ index }) => ({
@@ -30,18 +31,59 @@ const StyledTableCellHeader = styled(TableCell)({
   borderBottom: "2px solid #E0E0E0",
   borderRight: "1px solid #E0E0E0",
   padding: "12px",
-  fontWeight: "bold", // Bold for header cells
+  fontWeight: "bold",
 });
 
 const StyledTableCellBody = styled(TableCell)({
   borderBottom: "1px solid #E0E0E0",
   borderRight: "1px solid #E0E0E0",
   padding: "12px",
-  fontWeight: "normal", // Normal weight for body cells
-  color: "#666", // Slightly lighter color for body text
+  fontWeight: "normal",
+  color: "#666",
 });
 
 const Dashboard = () => {
+  // State management
+  const [stats, setStats] = useState(null); // For inventory stats
+  const [lowStockProducts, setLowStockProducts] = useState([]); // For low stock products
+  const [recentOrders, setRecentOrders] = useState([]); // For recent orders
+  const [orderCount, setOrderCount] = useState(0); // Total order count
+
+  // Fetch data from APIs
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch inventory stats
+        const statsResponse = await axios.get(
+          "http://localhost:8080/api/inventories/stats"
+        );
+        setStats(statsResponse.data);
+
+        // Fetch low stock products
+        const lowStockResponse = await axios.get(
+          "http://localhost:8080/products/low-stock"
+        );
+        setLowStockProducts(lowStockResponse.data);
+
+        // Fetch recent orders
+        const recentOrdersResponse = await axios.get(
+          "http://localhost:8080/orders/recent"
+        );
+        setRecentOrders(recentOrdersResponse.data);
+
+        // Fetch total order count
+        const orderCountResponse = await axios.get(
+          "http://localhost:8080/orders/count"
+        );
+        setOrderCount(orderCountResponse.data.count);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="dashboard">
       <Paper
@@ -63,25 +105,28 @@ const Dashboard = () => {
 
         {/* Dashboard Statistics Cards */}
         <Grid container spacing={4}>
-          {["Total Sales", "New Orders", "Pending Orders", "Low Products"].map(
-            (title, index) => (
-              <Grid item xs={12} md={3} key={index}>
-                <StyledCard index={index}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                      {title}
-                    </Typography>
-                    <Typography variant="h4" sx={{ marginTop: 2 }}>
-                      {index === 0 ? "$260,000" : 45 - index * 27}
-                    </Typography>
-                  </CardContent>
-                </StyledCard>
-              </Grid>
-            )
-          )}
+          {[
+            { title: "Total Sales", value: stats?.totalSales || "$0" },
+            { title: "New Orders", value: stats?.newOrders || 0 },
+            { title: "Pending Orders", value: stats?.pendingOrders || 0 },
+            { title: "Low Products", value: lowStockProducts.length },
+          ].map((item, index) => (
+            <Grid item xs={12} md={3} key={index}>
+              <StyledCard index={index}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    {item.title}
+                  </Typography>
+                  <Typography variant="h4" sx={{ marginTop: 2 }}>
+                    {item.value}
+                  </Typography>
+                </CardContent>
+              </StyledCard>
+            </Grid>
+          ))}
         </Grid>
 
-        {/* Tables for Low Stock Products and Recent Orders side by side */}
+        {/* Tables for Low Stock Products and Recent Orders */}
         <Grid container spacing={4} sx={{ marginTop: 4 }}>
           {/* Low Stock Products Table */}
           <Grid item xs={12} md={6}>
@@ -105,23 +150,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {[
-                    {
-                      id: "P001",
-                      name: "T-Shirt",
-                      stock: 5,
-                    },
-                    {
-                      id: "P002",
-                      name: "Jeans",
-                      stock: 8,
-                    },
-                    {
-                      id: "P003",
-                      name: "Sneakers",
-                      stock: 2,
-                    },
-                  ].map((product, index) => (
+                  {lowStockProducts.map((product, index) => (
                     <TableRow key={index} hover>
                       <StyledTableCellBody>{product.id}</StyledTableCellBody>
                       <StyledTableCellBody>{product.name}</StyledTableCellBody>
@@ -155,29 +184,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {[
-                    {
-                      id: "001ab",
-                      customer: "John Doe",
-                      date: "12 Nov, 14:20",
-                      status: "Completed",
-                      total: "$2,400",
-                    },
-                    {
-                      id: "002cb",
-                      customer: "Jane Smith",
-                      date: "11 Nov, 09:15",
-                      status: "Pending",
-                      total: "$1,200",
-                    },
-                    {
-                      id: "003ab",
-                      customer: "Mike Brown",
-                      date: "10 Nov, 16:45",
-                      status: "Canceled",
-                      total: "$980",
-                    },
-                  ].map((order, index) => (
+                  {recentOrders.map((order, index) => (
                     <TableRow key={index} hover>
                       <StyledTableCellBody>{order.id}</StyledTableCellBody>
                       <StyledTableCellBody>

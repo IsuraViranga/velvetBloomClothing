@@ -6,13 +6,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import {tempEditProduct} from '../TemporaryData/editProductData';
-import boy from '../assets/boy.jpg';
-import boy2 from '../assets/boy.jpg';
-import boy3 from '../assets/boy.jpg';
 
 const initialState = {
-  productName: 'ggrg',
-  category: ["Clothing", "Unisex", "Sweatshirts"],
+  productName: '',
+  category: [],
   lowStockCount: 0,
   brand: '',
   unitPrice: 0,
@@ -86,25 +83,29 @@ function EditProduct() {
     return 'In Stock';
   };
 
+  function getCategoryNames(categories) {
+    return categories.map(category => category.name);
+  }
+
   useEffect(() => {
       const fetchFulllCategoryList = async () => {
         try {
-          // const response = await axios.get(`/api/categories`);
-          // const productData = response.data;
-          //setFullCategoryList(productData);
-          const clothingCategories = [
-            "Clothing",
-            "Unisex",
-            "Sweatshirts",
-            "Shirts",
-            "T-Shirts",
-            "Jackets",
-            "Pants",
-            "Shorts",
-            "Dresses",
-            "Activewear"
-          ];          
-          setFullCategoryList(clothingCategories);
+          const response = await axios.get(`http://localhost:8080/categories`);
+          const productData = getCategoryNames( response.data);
+          setFullCategoryList(productData);
+          // const clothingCategories = [
+          //   "Clothing",
+          //   "Unisex",
+          //   "Sweatshirts",
+          //   "Shirts",
+          //   "T-Shirts",
+          //   "Jackets",
+          //   "Pants",
+          //   "Shorts",
+          //   "Dresses",
+          //   "Activewear"
+          // ];          
+          // setFullCategoryList(clothingCategories);
         } catch (error) {
           console.error('Error fetching list of categories:', error);
         }
@@ -116,10 +117,9 @@ function EditProduct() {
     if (id) {
       const fetchProduct = async () => {
         try {
-          // const response = await axios.get(`/api/products/${id}`);
-          // const productData = response.data;
-          const productData = tempEditProduct;
-          console.log(state.mainImage);
+          const response = await axios.get(`http://localhost:8080/products/${id}`);
+          const productData = response.data;
+          //const productData = tempEditProduct;
             dispatch({
               type: 'SET_INITIAL_DATA',
               data: {
@@ -152,7 +152,7 @@ function EditProduct() {
     if (!state.productName.trim()) {
       newErrors.productName = 'Product name cannot be empty.';
     } else if (!/^[a-zA-Z\s]{3,}$/.test(state.productName)) {
-      newErrors.productName = 'Product name must contain at least three letters.';
+      newErrors.productName = 'Product name can only contain letters.need atleast 3';
     }
 
     // Brand validation
@@ -194,24 +194,30 @@ function EditProduct() {
         });
         return;
       }
+      const product ={
+        productName:state.productName,
+        categories:state.category,
+        lowStockCount:state.lowStockCount,
+        brand:state.brand,
+        unitPrice:state.unitPrice,
+        discount:state.discount,
+        productCount:state.productCount,
+        description: state.description,
+        variety:state.variations
+      }
       const formData = new FormData();
-      formData.append('productName', state.productName);
-      formData.append('categories', JSON.stringify(state.category));
-      formData.append('lowStockCount', state.lowStockCount);
-      formData.append('brand', state.brand);
-      formData.append('unitPrice', state.unitPrice);
-      formData.append('discount', state.discount);
-      formData.append('productCount', state.productCount);
-      formData.append('description', state.description);
+      formData.append('product', JSON.stringify(product));
       formData.append('mainImage', state.mainImage);
       state.galleryImages.forEach((image, index) => {
-        formData.append(`imageGallery[${index}]`, image);
-      });
-      formData.append('variety', JSON.stringify(state.variations));
-
+        formData.append('galleryImages', image);
+      });     
       if (id) {
-        await axios.put(`/api/products/${id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        const token ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDEwMzMyLCJleHAiOjE3MzMwOTY3MzJ9.L0a72YWxp7_Lwu37rvqgalNTag3mIA86MXRySYBQJWc";
+        await axios.patch(`http://localhost:8080/products/${id}`, formData, {
+          headers: { 
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          },
         });
         alert('Product updated successfully!');
         await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
@@ -220,11 +226,6 @@ function EditProduct() {
           message: 'Product updated successfully!',
           severity: 'success',
         });
-      } else {
-        await axios.post('/api/products', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        alert('Product added successfully!');
       }
     } catch (error) {
       console.error('Failed to submit product:', error);
@@ -288,6 +289,7 @@ function EditProduct() {
               Product Name
             </Typography>
             <TextField
+              name="productName"
               fullWidth
               value={state.productName}
               onChange={(e) =>
@@ -376,6 +378,7 @@ function EditProduct() {
               Brand
             </Typography>
             <TextField
+              name="brand"
               fullWidth
               value={state.brand}
               onChange={(e) =>
@@ -438,13 +441,23 @@ function EditProduct() {
               }}
               sx={{ marginTop: 1 }}
             />
-            {state.mainImage && state.mainImage instanceof File && (
-              <div style={{ position: 'relative', marginTop: '10px' }}>
-                <img
-                  src={URL.createObjectURL(state.mainImage)}
-                  alt="Main Product"
-                  style={{ width: '40%', height: 'auto', borderRadius: '4px' }}
-                />
+            <div style={{ position: 'relative', marginTop: '10px' }}>
+              {state.mainImage && (
+                state.mainImage instanceof File ? (
+                  <img
+                    src={URL.createObjectURL(state.mainImage)}
+                    alt="Main Product"
+                    style={{ width: '40%', height: 'auto', borderRadius: '4px' }}
+                  />
+                ) : (
+                  <img
+                    src={state.mainImage}
+                    alt="Main Product"
+                    style={{ width: '40%', height: 'auto', borderRadius: '4px' }}
+                  />
+                )
+              )}
+              {state.mainImage && (
                 <IconButton
                   onClick={() => dispatch({ type: 'SET_MAIN_IMAGE', value: null })}
                   style={{
@@ -456,8 +469,8 @@ function EditProduct() {
                 >
                   <DeleteIcon color="error" />
                 </IconButton>
-              </div>
-            )}
+              )}
+            </div>
             <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Product Gallery</Typography>
             <TextField
               fullWidth
@@ -475,9 +488,15 @@ function EditProduct() {
             <Row className="mt-2">
               {state.galleryImages.map((image, index) => (
                 <Col xs={4} key={index} style={{ position: 'relative', marginBottom: '10px' }}>
-                  {image instanceof File && (
+                  {image instanceof File ? (
                     <img
                       src={URL.createObjectURL(image)}
+                      alt={`gallery-${index}`}
+                      style={{ width: '100%', height: 'auto', borderRadius: '4px' }}
+                    />
+                  ) : (
+                    <img
+                      src={image}
                       alt={`gallery-${index}`}
                       style={{ width: '100%', height: 'auto', borderRadius: '4px' }}
                     />
@@ -485,7 +504,9 @@ function EditProduct() {
                   <IconButton
                     onClick={() => {
                       dispatch({ type: 'REMOVE_GALLERY_IMAGE', index });
-                      URL.revokeObjectURL(image);
+                      if (image instanceof File) {
+                        URL.revokeObjectURL(image);
+                      }
                     }}
                     style={{
                       position: 'absolute',
@@ -538,6 +559,7 @@ function EditProduct() {
                       Color
                     </Typography>
                     <TextField
+                      name="colour"
                       fullWidth
                       label="Color"
                       value={color.color}
@@ -591,6 +613,7 @@ function EditProduct() {
           variant="contained"
           sx={{ marginTop: 3, backgroundColor: '#9E4BDC' }}
           onClick={handleSubmit}
+          data-testid="SaveChangesButton"
         >
           Save Changes
         </Button>

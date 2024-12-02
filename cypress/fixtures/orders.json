@@ -1,0 +1,80 @@
+[
+    {
+      "_id": "1",
+      "createdAt": "2023-12-01T12:00:00Z",
+      "status": "Ordered",
+      "customerName": "John Doe",
+      "total": 100.5
+    },
+    {
+      "_id": "2",
+      "createdAt": "2023-12-02T14:00:00Z",
+      "status": "Shipped",
+      "customerName": "Jane Smith",
+      "total": 200.0
+    },
+    {
+      "_id": "3",
+      "createdAt": "2023-12-03T16:00:00Z",
+      "status": "Delivered",
+      "customerName": "Mike Brown",
+      "total": 300.75
+    },
+    {
+      "_id": "4",
+      "createdAt": "2023-12-04T18:00:00Z",
+      "status": "Cancelled",
+      "customerName": "Emily Davis",
+      "total": 50.0
+    },
+    {
+      "_id": "5",
+      "createdAt": "2023-12-05T10:00:00Z",
+      "status": "Ordered",
+      "customerName": "Paul White",
+      "total": 75.25
+    },
+    {
+      "_id": "6",
+      "createdAt": "2023-12-06T09:30:00Z",
+      "status": "Shipped",
+      "customerName": "Sarah Green",
+      "total": 120.5
+    },
+    {
+      "_id": "7",
+      "createdAt": "2023-12-07T11:15:00Z",
+      "status": "Delivered",
+      "customerName": "Charlie Blue",
+      "total": 250.0
+    },
+    {
+      "_id": "8",
+      "createdAt": "2023-12-08T13:45:00Z",
+      "status": "Cancelled",
+      "customerName": "Sophia Black",
+      "total": 89.99
+    },
+    {
+      "_id": "9",
+      "createdAt": "2023-12-09T15:20:00Z",
+      "status": "Ordered",
+      "customerName": "Chris Orange",
+      "total": 150.0
+    },
+    {
+      "_id": "10",
+      "createdAt": "2023-12-10T17:10:00Z",
+      "status": "Shipped",
+      "customerName": "Lisa Yellow",
+      "total": 210.0
+    },
+    {
+      "_id": "11",
+      "createdAt": "2023-12-11T19:00:00Z",
+      "status": "Delivered",
+      "customerName": "Kevin Red",
+      "total": 320.5
+    }
+  ]
+  

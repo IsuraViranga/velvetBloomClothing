@@ -29,13 +29,20 @@ function Category() {
       'Accessories', 'Footwear', 'Winter Wear'
     ][index],
     description: `Description for ${['Men\'s Clothing', 'Women\'s Clothing', 'Kids\' Clothing', 'Accessories', 'Footwear', 'Winter Wear'][index]}`,
-    NumberOfProducts: Math.floor(Math.random() * 100),
+    numberOfProducts: Math.floor(Math.random() * 100),
   }));
 
   useEffect(() => {
-    //fetch this data from API.
-    setCategories(sampleCategories);
-    setFilteredCategories(sampleCategories); 
+    async function fetchCategories() {
+      try {
+        const response = await axios.get('http://localhost:8080/categories/with-product-count');        
+        setCategories(response.data);
+        setFilteredCategories(response.data); 
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+    fetchCategories();
   }, []);
 
   // Filter categories based on the search category name
@@ -68,7 +75,13 @@ function Category() {
   // Handle category deletion
   const handleDeleteCategory = async () => {
     try {
-      await axios.delete(`/api/categories/${categoryToDelete.categoryID}`);
+      const token ='eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDQzODIxLCJleHAiOjE3MzMxMzAyMjF9.WdZNY2Oj28BtVAAYYtBL0ncXE1dtA6jx-z14xc8AFBc';
+      await axios.delete(`http://localhost:8080/categories/${categoryToDelete.categoryID}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      alert('Category deleted successfully!');
       setCategories(categories.filter((category) => category.categoryID !== categoryToDelete.categoryID));
       setFilteredCategories(filteredCategories.filter((category) => category.categoryID !== categoryToDelete.categoryID));
       handleCloseDeleteDialog();
@@ -88,11 +101,24 @@ function Category() {
     setCategoryToEdit(null);
     setOpenEditDialog(false);
   };
-
+ 
   // Handle category update
   const handleUpdateCategory = async () => {
     try {
-      await axios.put(`/api/categories/${categoryToEdit.categoryID}`, categoryToEdit);
+      const formData = new FormData();
+      const sendCategory ={
+        name:categoryToEdit.category_name,
+        description:categoryToEdit.description
+      }
+      formData.append('category', JSON.stringify(sendCategory));
+      //formData.append('image', null);
+      const token ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDQzODIxLCJleHAiOjE3MzMxMzAyMjF9.WdZNY2Oj28BtVAAYYtBL0ncXE1dtA6jx-z14xc8AFBc";
+      await axios.patch(`http://localhost:8080/categories/${categoryToEdit.categoryID}`, formData, {
+          headers: { 
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          },
+      });
       setCategories(categories.map((category) =>
         category.categoryID === categoryToEdit.categoryID ? categoryToEdit : category
       ));
@@ -142,7 +168,7 @@ function Category() {
             color="primary"
             onClick={handleAddCategory}
           >
-            Add Category
+            Add Category 
           </Button>
         </Grid>
       </Grid>
@@ -163,7 +189,7 @@ function Category() {
               <TableRow key={category.categoryID} data-testid="category-row">
                 <TableCell>{category.category_name}</TableCell>
                 <TableCell>{category.description}</TableCell>
-                <TableCell>{category.NumberOfProducts}</TableCell>
+                <TableCell>{category.numberOfProducts}</TableCell>
                 <TableCell>
                   <IconButton onClick={() => handleOpenEditDialog(category)} data-testid={`EditIcon`} >
                     <EditIcon />
@@ -217,7 +243,7 @@ function Category() {
           <TextField
             fullWidth
             label="Number of Products"
-            value={categoryToEdit?.NumberOfProducts || ''}
+            value={categoryToEdit?.numberOfProducts || ''}
             disabled
             sx={{ marginTop: 2 }}
           />

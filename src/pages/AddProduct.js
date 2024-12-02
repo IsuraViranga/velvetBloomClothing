@@ -4,7 +4,7 @@ import { Container, Row, Col } from 'react-bootstrap';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
-
+ 
 const initialState = {
   productName: '',
   category: [],
@@ -111,9 +111,9 @@ function AddProduct() {
     if (!state.productName.trim()) {
       newErrors.productName = 'Product name cannot be empty.';
     } else if (!/^[a-zA-Z\s]{3,}$/.test(state.productName)) {
-      newErrors.productName = 'Product name must contain at least three letters.';
+      newErrors.productName = 'Product name can only contain letters.need atleast 3';
     }
-
+ 
     // Brand validation
     if (!state.brand.trim()) {
       newErrors.brand = 'Brand name cannot be empty.';
@@ -153,24 +153,37 @@ function AddProduct() {
         });
         return;
       }
+      const product ={
+        productName:state.productName,
+        categories:state.category,
+        lowStockCount:state.lowStockCount,
+        brand:state.brand,
+        unitPrice:state.unitPrice,
+        discount:state.discount,
+        productCount:state.productCount,
+        description: state.description,
+        variety:state.variations
+      }
       const formData = new FormData();
-      formData.append('productName', state.productName);
-      formData.append('categories', JSON.stringify(state.category));
-      formData.append('lowStockCount', state.lowStockCount);
-      formData.append('brand', state.brand);
-      formData.append('unitPrice', state.unitPrice);
-      formData.append('discount', state.discount);
-      formData.append('productCount', state.productCount);
-      formData.append('description', state.description);
+      formData.append('product', JSON.stringify(product));
       formData.append('mainImage', state.mainImage);
       state.galleryImages.forEach((image, index) => {
-        formData.append(`imageGallery[${index}]`, image);
+        formData.append('galleryImages', image);
+      });      
+      const token ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMTExNjAwLCJleHAiOjE3MzMxOTgwMDB9.Z2ik2wjZsMumJ_ZdPXk7QMctOf_eLEWokYsAut3-5Ao";
+      await axios.post('http://localhost:8080/products', formData, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        },
       });
-      formData.append('variety', JSON.stringify(state.variations));
-        await axios.post('/api/products', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        alert('Product added successfully!');
+      alert('Product added successfully!');
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
+      setSnackbar({
+        open: true,
+        message:'Product added successfully!',
+         severity:'success',
+      });
     } catch (error) {
       console.error('Failed to submit product:', error);
       setSnackbar({
@@ -233,6 +246,7 @@ function AddProduct() {
               Product Name
             </Typography>
             <TextField
+              name="productName"
               fullWidth
               value={state.productName}
               onChange={(e) =>
@@ -283,11 +297,12 @@ function AddProduct() {
               Low Stock Count
             </Typography>
             <TextField
+              name="low-count"
               fullWidth
               type="number"
               value={state.lowStockCount}
               onChange={(e) =>
-                dispatch({ type: 'SET_FIELD', field: 'lowStockCount', value: Math.max(0, Number(e.target.value)) })
+                dispatch({ type: 'SET_FIELD', field: 'lowStockCount', value: Math.max(0, Number(e.target.value)) } )
               }
               sx={{ marginTop: 1 }}
             />
@@ -295,6 +310,7 @@ function AddProduct() {
               Product Count
             </Typography>
             <TextField
+              name="productCount"
               fullWidth
               type="number"
               value={state.productCount}
@@ -308,6 +324,7 @@ function AddProduct() {
               Unit Price
             </Typography>
             <TextField
+              name ="unitPrice"
               fullWidth
               type="number"
               value={state.unitPrice}
@@ -321,6 +338,7 @@ function AddProduct() {
               Brand
             </Typography>
             <TextField
+              name="brand"
               fullWidth
               value={state.brand}
               onChange={(e) =>
@@ -330,21 +348,20 @@ function AddProduct() {
               helperText={errors.brand}
               sx={{ marginTop: 1 }}
             />
-
             <Typography variant="h6" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
               Description
             </Typography>
             <TextField
+              name="description"
               fullWidth
               multiline
               rows={4}
               value={state.description}
-              onChange={(e) =>
-                dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })
-              }
+              // onChange={(e) =>
+              //   dispatch({ type: 'SET_FIELD', field: 'description', value: e.target.value })
+              // }
               sx={{ marginTop: 1 }}
             />
-
             <Typography variant="h6" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
               Product Status
             </Typography>
@@ -364,6 +381,7 @@ function AddProduct() {
           <Col md={6} sm={12}>
             <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>Discount</Typography>
             <TextField
+              name="discount"
               fullWidth
               type="number"
               value={state.discount}
@@ -372,6 +390,7 @@ function AddProduct() {
             />
             <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold' }}>Product Main Image</Typography>
             <TextField
+              name="file"
               fullWidth
               type="file"
               inputProps={{ accept: 'image/*' }}
@@ -383,7 +402,6 @@ function AddProduct() {
               }}
               sx={{ marginTop: 1 }}
             />
-
             {state.mainImage && state.mainImage instanceof File && (
               <div style={{ position: 'relative', marginTop: '10px' }}>
                 <img
@@ -456,11 +474,12 @@ function AddProduct() {
               Add Variation
             </Button>
             {state.variations.map((variation, index) => (
-              <div key={index}>
+              <div key={index} data-testid="variations-section">
                 <Typography variant="h7" sx={{ color: 'Black', fontWeight: 'bold', marginTop: 2 }}>
                   Size
                 </Typography>
                 <TextField
+                  data-testid="size-select"
                   fullWidth
                   select
                   value={variation.size}
@@ -484,6 +503,7 @@ function AddProduct() {
                       Color
                     </Typography>
                     <TextField
+                      data-testid="color-input"
                       fullWidth
                       label="Color"
                       value={color.color}
@@ -504,6 +524,7 @@ function AddProduct() {
                       Count
                     </Typography>
                     <TextField
+                      data-testid="count-input"
                       fullWidth
                       type="number"
                       value={color.count}
@@ -537,6 +558,7 @@ function AddProduct() {
           variant="contained"
           sx={{ marginTop: 3, backgroundColor: '#9E4BDC' }}
           onClick={handleSubmit}
+          data-testid="add"
         >
           Add Product
         </Button>

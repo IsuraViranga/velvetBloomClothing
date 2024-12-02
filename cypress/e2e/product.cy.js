@@ -4,7 +4,7 @@ describe('Product Management Page UI', () => {
     });
 
     it('Should display the page with the overall inventory title and stats section', () => {
-      cy.contains('h5', 'Overall Inventory').should('be.visible'); // Check the overall inventory title
+      cy.contains('h5', 'Overall Inventory').should('be.visible'); 
       cy.contains('Categories').should('be.visible');
       cy.contains('Total Products').should('be.visible');
       cy.contains('In Stock').should('be.visible');
@@ -13,8 +13,7 @@ describe('Product Management Page UI', () => {
     });
 
     it('Should display correct stats with values', () => {
-      // Check that the stat values are rendered correctly, assuming `stats` is an object
-      cy.get('table').should('exist'); // Ensure stats section is present
+      cy.get('table').should('exist'); 
       cy.get('table tbody').should('exist');
       cy.get('table tbody tr').should('have.length.greaterThan', 0);
     });
@@ -24,13 +23,10 @@ describe('Product Management Page UI', () => {
     });
 
     it('Should display search fields and status dropdown', () => {
-      // Check that the search bars and status dropdown exist
       cy.contains('label', 'Search by Product Name').should('exist');
       cy.contains('label', 'Search by Category Name').should('exist');
       cy.contains('label', 'Status').should('exist');
-      cy.get('input').should('have.length', 4); // Check that two search bars are present
-    //    // Look for the FormControl that wraps the select
-    //   cy.get('FormControl').should('exist').find('select').should('exist'); 
+      cy.get('input').should('have.length', 4); 
     });
 
     it('Should display the product table headers correctly', () => {
@@ -43,32 +39,29 @@ describe('Product Management Page UI', () => {
     });
 
     it('Should display products table with rows', () => {
-      // Ensure that the table body and rows exist
       cy.get('table tbody').should('exist');
-      cy.get('table tbody tr').should('have.length.greaterThan', 0); // Make sure there are rows in the table
+      cy.get('table tbody tr').should('have.length.greaterThan', 0); 
     });
 
     it('Should display product actions with Edit and Delete buttons', () => {
-      // Check if the Edit and Delete buttons exist for the first product in the table
       cy.get('table tbody tr').first().within(() => {
-        cy.get('[data-testid="EditIcon"]').should('exist'); // Ensure Edit button is present
-        cy.get('[data-testid="DeleteIcon"]').should('exist'); // Ensure Delete button is present
+        cy.get('[data-testid="EditIcon"]').should('exist'); 
+        cy.get('[data-testid="DeleteIcon"]').should('exist'); 
       });
     });
 
     it('Should display the pagination controls', () => {
-      // Check if the pagination controls exist and function as expected
-      cy.get('.MuiTablePagination-root').should('exist'); // Ensure pagination exists
-      cy.get('.MuiTablePagination-select').should('exist'); // Check rows per page selector
-      cy.get('.MuiTablePagination-actions .MuiIconButton-root').should('have.length', 2); // Check Next and Previous buttons
+      cy.get('.MuiTablePagination-root').should('exist'); 
+      cy.get('.MuiTablePagination-select').should('exist'); 
+      cy.get('.MuiTablePagination-actions .MuiIconButton-root').should('have.length', 2); 
     });
 
     it('Should display the delete confirmation dialog', () => {
-      cy.get('[data-testid="DeleteIcon"]').first().click(); // Click delete for the first product
-      cy.get('.MuiDialog-root').should('exist'); // Ensure dialog is displayed
-      cy.contains('Delete Product').should('be.visible'); // Ensure the dialog title is visible
-      cy.contains('Are you sure you want to delete this product?').should('be.visible'); // Ensure confirmation message is visible
-      cy.get('.MuiDialogActions-root').should('exist'); // Ensure the dialog actions (buttons) are present
+      cy.get('[data-testid="DeleteIcon"]').first().click(); 
+      cy.get('.MuiDialog-root').should('exist'); 
+      cy.contains('Delete Product').should('be.visible'); 
+      cy.contains('Are you sure you want to delete this product?').should('be.visible'); 
+      cy.get('.MuiDialogActions-root').should('exist'); 
     });
 });
 
@@ -103,12 +96,12 @@ describe('Product Management Page Actions', () => {
   
     it('Should filter products by category name', () => {
       // Type a category name to filter
-      const categoryText = 'Pa'; // Replace with an actual category name for testing
+      const categoryText = 'tsh'; // Replace with an actual category name for testing
       cy.get('label').contains('Search by Category Name').parent().find('input').type(categoryText);
   
       cy.get('[data-testid="product-row"]').then((rows) => {
         // Ensure the number of rows matches the expected count
-        const expectedRowCount = 1; // Replace with your actual category count
+        const expectedRowCount = 2; // Replace with your actual category count
         expect(rows.length).to.equal(expectedRowCount);
       });
 
@@ -117,7 +110,7 @@ describe('Product Management Page Actions', () => {
     it('Should filter products by status', () => {
         // Open the Status dropdown (target the first combobox)
         cy.get('div[role="combobox"]').first().click();
-      
+       
         // Ensure dropdown options are visible
         cy.get('ul[role="listbox"]').should('be.visible');
       

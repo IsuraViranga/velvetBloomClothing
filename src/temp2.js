@@ -1,132 +1,191 @@
-import React, { useState } from 'react';
-import { Paper, Typography, TextField, Button, Box, Dialog, DialogActions, DialogTitle, DialogContent } from '@mui/material';
-import { useNavigate } from 'react-router-dom'; 
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import {
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TablePagination,
+  CircularProgress,
+  IconButton,
+} from "@mui/material";
+import axios from "axios";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
-function AddCategory() {
-  const navigate = useNavigate(); 
+function OrderManagement() {
+  const [orders, setOrders] = useState([]); // All orders
+  const [filteredOrders, setFilteredOrders] = useState([]); // Orders after filtering
+  const [statusFilter, setStatusFilter] = useState(""); // Filter by status
+  const [loading, setLoading] = useState(true); // Loading state
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false); // Delete dialog
+  const [orderToDelete, setOrderToDelete] = useState(null); // Order ID to delete
+  const [page, setPage] = useState(0); // Current page index
+  const [rowsPerPage, setRowsPerPage] = useState(5); // Rows per page
 
-  // State variables for form inputs
-  const [categoryName, setCategoryName] = useState('');
-  const [description, setDescription] = useState('');
-  const [mainImage, setMainImage] = useState(null);
-  const [openSuccessDialog, setOpenSuccessDialog] = useState(false);
+  // Fetch Orders on Component Mount
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
-  // Handle change for the category name
-  const handleCategoryNameChange = (e) => setCategoryName(e.target.value);
-
-  // Handle change for the description
-  const handleDescriptionChange = (e) => setDescription(e.target.value);
-
-  // Handle file input change for the image
-  const handleImageChange = (e) => setMainImage(e.target.files[0]);
-
-  // Handle the add button click
-  const handleAddCategory = async () => {
-    if (!categoryName || !description || !mainImage) {
-      alert('Please fill in all fields and upload an image');
-      return;
-    }
-
-    // Prepare FormData to send the data as multipart form data
-    const formData = new FormData();
-    formData.append('categoryName', categoryName);
-    formData.append('description', description);
-    formData.append('mainImage', mainImage);
-
+  const fetchOrders = async () => {
     try {
-      const response = await axios.post('http://your-backend-api-url/categories', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      if (response.status === 200) {
-        setOpenSuccessDialog(true);
-      }
+      const response = await axios.get("http://localhost:8080/orders");
+      setOrders(response.data);
+      setFilteredOrders(response.data);
+      setLoading(false);
     } catch (error) {
-      console.error('There was an error adding the category!', error);
-      alert('Error adding category. Please try again.');
+      console.error("Error fetching orders:", error);
+      setLoading(false);
     }
   };
 
-  // Close the success dialog
-  const handleCloseSuccessDialog = () => setOpenSuccessDialog(false);
-
-  // Navigate back to the category page using navigate
-  const handleBack = () => {
-    navigate('/category'); 
+  const handleStatusFilterChange = (event) => {
+    const status = event.target.value;
+    setStatusFilter(status);
+    if (status) {
+      setFilteredOrders(orders.filter((order) => order.status === status));
+    } else {
+      setFilteredOrders(orders);
+    }
   };
+
+  const handleOpenDeleteDialog = (orderId) => {
+    setOrderToDelete(orderId);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setOrderToDelete(null);
+    setOpenDeleteDialog(false);
+  };
+
+  const handleDeleteOrder = async () => {
+    try {
+      await axios.delete("http://localhost:8080/orders/${orderToDelete}");
+      setOrders(orders.filter((order) => order._id !== orderToDelete));
+      setFilteredOrders(
+        filteredOrders.filter((order) => order._id !== orderToDelete)
+      );
+      handleCloseDeleteDialog();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  };
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0); // Reset to the first page
+  };
+
+  const displayedOrders = filteredOrders.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
     <Paper
       sx={{
         padding: 3,
-        backgroundColor: 'white',
-        minHeight: '81vh',
-        marginTop: 2,
-        marginLeft: 2,
-        marginRight: 2,
+        backgroundColor: "white",
+        minHeight: "81vh",
         borderRadius: 2,
         boxShadow: 3,
-        display: 'flex',
-        flexDirection: 'column', 
-        justifyContent: 'space-between', 
       }}
     >
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="h4" sx={{ color: '#9E4BDC', fontWeight: 'bold' }}>
-          Add Category
-        </Typography>
-        <TextField
-          label="Category Name"
-          variant="outlined"
-          fullWidth
-          sx={{ marginTop: 2 }}
-          value={categoryName}
-          onChange={handleCategoryNameChange}
-        />
-        <TextField
-          label="Description"
-          variant="outlined"
-          fullWidth
-          multiline
-          rows={4}
-          sx={{ marginTop: 2 }}
-          value={description}
-          onChange={handleDescriptionChange}
-        />
-      </Box>
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        Order Management
+      </Typography>
+      <FormControl sx={{ mb: 2, minWidth: 200 }}>
+        <InputLabel>Status Filter</InputLabel>
+        <Select
+          value={statusFilter}
+          onChange={handleStatusFilterChange}
+          label="Status Filter"
+        >
+          <MenuItem value="">All</MenuItem>
+          <MenuItem value="Ordered">Ordered</MenuItem>
+          <MenuItem value="Shipped">Shipped</MenuItem>
+          <MenuItem value="Delivered">Delivered</MenuItem>
+          <MenuItem value="Cancelled">Cancelled</MenuItem>
+        </Select>
+      </FormControl>
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        <>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Order ID</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Customer</TableCell>
+                  <TableCell>Total</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {displayedOrders.map((order) => (
+                  <TableRow key={order._id}>
+                    <TableCell>{order._id}</TableCell>
+                    <TableCell>
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>{order.status}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>${order.total.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleOpenDeleteDialog(order._id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={filteredOrders.length}
+            page={page}
+            onPageChange={handlePageChange}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleRowsPerPageChange}
+          />
+        </>
+      )}
 
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="h6" sx={{ color: '#9E4BDC', fontWeight: 'bold' }}>
-          Category Main Image
-        </Typography>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          style={{ marginTop: 10 }}
-        />
-      </Box>
-
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-        <Button variant="contained" color="primary" onClick={handleAddCategory}>
-          Add
-        </Button>
-        <Button variant="outlined" color="secondary" onClick={handleBack}>
-          Back
-        </Button>
-      </Box>
-
-      {/* Success Dialog */}
-      <Dialog open={openSuccessDialog} onClose={handleCloseSuccessDialog}>
-        <DialogTitle>Category Added</DialogTitle>
+      {/* Delete Dialog */}
+      <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
-          <Typography>Category has been added successfully!</Typography>
+          Are you sure you want to delete this order?
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseSuccessDialog} color="primary">
-            Close
+          <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
+          <Button onClick={handleDeleteOrder} color="error" variant="contained">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
@@ -134,4 +193,4 @@ function AddCategory() {
   );
 }
 
-export default AddCategory;
+export default OrderManagement;
