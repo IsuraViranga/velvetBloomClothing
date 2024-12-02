@@ -22,6 +22,8 @@ const initialState = {
 
 function reducer(state, action) {
   switch (action.type) {
+    case 'SET_INITIAL_DATA':
+      return action.data;
     case 'SET_FIELD':
       return { ...state, [action.field]: action.value };
     case 'SET_MAIN_IMAGE':
@@ -71,32 +73,22 @@ function AddProduct() {
   const [errors, setErrors] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  //Determine the product status
   const getStatus = (availableCount, lowStockCount) => {
     if (availableCount === 0) return 'Out of Stock';
     if (availableCount < lowStockCount) return 'Low Stock';
     return 'In Stock';
   };
 
+  function getCategoryNames(categories) {
+    return categories.map(category => category.name);
+  }
+
   useEffect(() => {
     const fetchFulllCategoryList = async () => {
       try {
-        // const response = await axios.get(`/api/categories`);
-        // const productData = response.data;
-        //setFullCategoryList(productData);
-        const clothingCategories = [
-          "Clothing",
-          "Unisex",
-          "Sweatshirts",
-          "Shirts",
-          "T-Shirts",
-          "Jackets",
-          "Pants",
-          "Shorts",
-          "Dresses",
-          "Activewear"
-        ];          
-        setFullCategoryList(clothingCategories);
+        const response = await axios.get(`http://localhost:8080/categories`);
+        const productData = getCategoryNames( response.data);
+        setFullCategoryList(productData);
       } catch (error) {
         console.error('Error fetching list of categories:', error);
       }
@@ -169,8 +161,8 @@ function AddProduct() {
       formData.append('mainImage', state.mainImage);
       state.galleryImages.forEach((image, index) => {
         formData.append('galleryImages', image);
-      });      
-      const token ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMTExNjAwLCJleHAiOjE3MzMxOTgwMDB9.Z2ik2wjZsMumJ_ZdPXk7QMctOf_eLEWokYsAut3-5Ao";
+      });  
+      const token = localStorage.getItem("token"); // Retrieve the token from localStorage    
       await axios.post('http://localhost:8080/products', formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
@@ -183,6 +175,23 @@ function AddProduct() {
         open: true,
         message:'Product added successfully!',
          severity:'success',
+      });
+      dispatch({
+        type: 'SET_INITIAL_DATA',
+        data: {
+          productName:"",
+          category:[],
+          lowStockCount:0,
+          brand:"",
+          unitPrice:0,
+          discount:0,
+          productCount:0,
+          description:"",
+          productStatus:"",
+          mainImage:null,
+          galleryImages:[],
+          variations:[{ size: '', colors: [{ color: '', count: 0 }] }],
+        },
       });
     } catch (error) {
       console.error('Failed to submit product:', error);

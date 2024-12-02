@@ -22,29 +22,36 @@ import {
   IconButton,
 } from "@mui/material";
 import axios from "axios";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 function OrderManagement() {
-  const [orders, setOrders] = useState([]); // All orders
-  const [filteredOrders, setFilteredOrders] = useState([]); // Orders after filtering
-  const [statusFilter, setStatusFilter] = useState(""); // Filter by status
+  const [orders, setOrders] = useState([]); // Orders data
+  const [statusFilter, setStatusFilter] = useState(""); // Status filter
   const [loading, setLoading] = useState(true); // Loading state
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false); // Delete dialog
-  const [orderToDelete, setOrderToDelete] = useState(null); // Order ID to delete
-  const [page, setPage] = useState(0); // Current page index
+  const [orderToDelete, setOrderToDelete] = useState(null); // Selected order for deletion
+  const [page, setPage] = useState(0); // Current page
   const [rowsPerPage, setRowsPerPage] = useState(5); // Rows per page
+  const [totalItems, setTotalItems] = useState(0); // Total items count
 
-  // Fetch Orders on Component Mount
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [page, rowsPerPage]); // Re-fetch when page or rows per page changes
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/orders");
-      setOrders(response.data);
-      setFilteredOrders(response.data);
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:8080/orders?status=${statusFilter}&page=${page}&pageSize=${rowsPerPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setOrders(response.data.orders);
+      setTotalItems(response.data.totalItems);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -53,13 +60,9 @@ function OrderManagement() {
   };
 
   const handleStatusFilterChange = (event) => {
-    const status = event.target.value;
-    setStatusFilter(status);
-    if (status) {
-      setFilteredOrders(orders.filter((order) => order.status === status));
-    } else {
-      setFilteredOrders(orders);
-    }
+    setStatusFilter(event.target.value);
+    setPage(0); // Reset to the first page
+    fetchOrders(); // Refetch orders
   };
 
   const handleOpenDeleteDialog = (orderId) => {
@@ -74,12 +77,15 @@ function OrderManagement() {
 
   const handleDeleteOrder = async () => {
     try {
-      await axios.delete("http://localhost:8080/orders/${orderToDelete}");
-      setOrders(orders.filter((order) => order._id !== orderToDelete));
-      setFilteredOrders(
-        filteredOrders.filter((order) => order._id !== orderToDelete)
-      );
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:8080/orders/${orderToDelete}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setOrders(orders.filter((order) => order.id !== orderToDelete));
       handleCloseDeleteDialog();
+      alert('Product deleted successfully!');
     } catch (error) {
       console.error("Error deleting order:", error);
     }
@@ -93,11 +99,6 @@ function OrderManagement() {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0); // Reset to the first page
   };
-
-  const displayedOrders = filteredOrders.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
 
   return (
     <Paper
@@ -120,10 +121,10 @@ function OrderManagement() {
           label="Status Filter"
         >
           <MenuItem value="">All</MenuItem>
-          <MenuItem value="Ordered">Ordered</MenuItem>
-          <MenuItem value="Shipped">Shipped</MenuItem>
-          <MenuItem value="Delivered">Delivered</MenuItem>
-          <MenuItem value="Cancelled">Cancelled</MenuItem>
+          <MenuItem value="ordered">Ordered</MenuItem>
+          <MenuItem value="shipped">Shipped</MenuItem>
+          <MenuItem value="delivered">Delivered</MenuItem>
+          <MenuItem value="cancelled">Cancelled</MenuItem>
         </Select>
       </FormControl>
       {loading ? (
@@ -143,19 +144,19 @@ function OrderManagement() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {displayedOrders.map((order) => (
-                  <TableRow key={order._id}>
-                    <TableCell>{order._id}</TableCell>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>{order.id}</TableCell>
                     <TableCell>
-                      {new Date(order.createdAt).toLocaleDateString()}
+                      {new Date(order.orderDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{order.status}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell>${order.total.toFixed(2)}</TableCell>
+                    <TableCell>{order.contactName}</TableCell>
+                    <TableCell>${order.totalAmount.toFixed(2)}</TableCell>
                     <TableCell>
                       <IconButton
                         color="error"
-                        onClick={() => handleOpenDeleteDialog(order._id)}
+                        onClick={() => handleOpenDeleteDialog(order.id)}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -167,7 +168,7 @@ function OrderManagement() {
           </TableContainer>
           <TablePagination
             component="div"
-            count={filteredOrders.length}
+            count={totalItems}
             page={page}
             onPageChange={handlePageChange}
             rowsPerPage={rowsPerPage}
@@ -175,8 +176,6 @@ function OrderManagement() {
           />
         </>
       )}
-
-      {/* Delete Dialog */}
       <Dialog open={openDeleteDialog} onClose={handleCloseDeleteDialog}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
@@ -184,7 +183,11 @@ function OrderManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleDeleteOrder} color="error" variant="contained" data-testid="deleteIcon">
+          <Button
+            onClick={handleDeleteOrder}
+            color="error"
+            variant="contained"
+          >
             Delete
           </Button>
         </DialogActions>

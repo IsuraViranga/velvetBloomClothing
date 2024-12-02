@@ -21,17 +21,6 @@ function Category() {
 
   const navigate = useNavigate();  
 
-  // Sample categories for a clothing shop
-  const sampleCategories = Array.from({ length: 6 }, (_, index) => ({
-    categoryID: `category${index + 1}`,
-    category_name: [
-      'Men\'s Clothing', 'Women\'s Clothing', 'Kids\' Clothing',
-      'Accessories', 'Footwear', 'Winter Wear'
-    ][index],
-    description: `Description for ${['Men\'s Clothing', 'Women\'s Clothing', 'Kids\' Clothing', 'Accessories', 'Footwear', 'Winter Wear'][index]}`,
-    numberOfProducts: Math.floor(Math.random() * 100),
-  }));
-
   useEffect(() => {
     async function fetchCategories() {
       try {
@@ -75,7 +64,7 @@ function Category() {
   // Handle category deletion
   const handleDeleteCategory = async () => {
     try {
-      const token ='eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDQzODIxLCJleHAiOjE3MzMxMzAyMjF9.WdZNY2Oj28BtVAAYYtBL0ncXE1dtA6jx-z14xc8AFBc';
+      const token = localStorage.getItem("token");
       await axios.delete(`http://localhost:8080/categories/${categoryToDelete.categoryID}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -111,8 +100,7 @@ function Category() {
         description:categoryToEdit.description
       }
       formData.append('category', JSON.stringify(sendCategory));
-      //formData.append('image', null);
-      const token ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDQzODIxLCJleHAiOjE3MzMxMzAyMjF9.WdZNY2Oj28BtVAAYYtBL0ncXE1dtA6jx-z14xc8AFBc";
+      const token = localStorage.getItem("token");
       await axios.patch(`http://localhost:8080/categories/${categoryToEdit.categoryID}`, formData, {
           headers: { 
             'Content-Type': 'multipart/form-data',
@@ -126,6 +114,7 @@ function Category() {
         category.categoryID === categoryToEdit.categoryID ? categoryToEdit : category
       ));
       handleCloseEditDialog();
+      alert('Product added successfully!');
     } catch (error) {
       console.error('Error updating category:', error);
     }

@@ -53,28 +53,37 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token");
         // Fetch inventory stats
-        const statsResponse = await axios.get(
-          "http://localhost:8080/api/inventories/stats"
-        );
+        const statsResponse = await axios.get(`http://localhost:8080/inventories/stats`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setStats(statsResponse.data);
 
         // Fetch low stock products
-        const lowStockResponse = await axios.get(
-          "http://localhost:8080/products/low-stock"
-        );
+        const lowStockResponse = await axios.get(`http://localhost:8080/products/low-stock`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setLowStockProducts(lowStockResponse.data);
 
         // Fetch recent orders
-        const recentOrdersResponse = await axios.get(
-          "http://localhost:8080/orders/recent"
-        );
+        const recentOrdersResponse = await axios.get(`http://localhost:8080/orders/recent`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setRecentOrders(recentOrdersResponse.data);
 
         // Fetch total order count
-        const orderCountResponse = await axios.get(
-          "http://localhost:8080/orders/count"
-        );
+        const orderCountResponse = await axios.get(`http://localhost:8080/orders/count`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setOrderCount(orderCountResponse.data.count);
       } catch (error) {
         console.error("Error fetching data:", error);

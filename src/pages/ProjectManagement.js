@@ -117,7 +117,7 @@ function ProjectManagement() {
   // Handle product deletion
   const handleDeleteProduct = async () => {
     try {
-      const token ='eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDM3MzAwLCJleHAiOjE3MzMxMjM3MDB9.FeTUTXVmcp6hw4dhatr5x0JXvGTEt55z8phufnNLDS0';
+      const token = localStorage.getItem("token");
       await axios.delete(`http://localhost:8080/products/${productToDelete}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -126,7 +126,7 @@ function ProjectManagement() {
       setProducts(products.filter((product) => product._id !== productToDelete));
       setFilteredProducts(filteredProducts.filter((product) => product._id !== productToDelete));
       handleCloseDeleteDialog();
-      alert('Product added successfully!');
+      alert('Product deleted successfully!');
     } catch (error) {
       console.error('Error deleting product:', error);
     }

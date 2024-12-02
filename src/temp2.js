@@ -26,14 +26,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 function OrderManagement() {
-  const [orders, setOrders] = useState([]); // All orders
-  const [filteredOrders, setFilteredOrders] = useState([]); // Orders after filtering
-  const [statusFilter, setStatusFilter] = useState(""); // Filter by status
-  const [loading, setLoading] = useState(true); // Loading state
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false); // Delete dialog
-  const [orderToDelete, setOrderToDelete] = useState(null); // Order ID to delete
-  const [page, setPage] = useState(0); // Current page index
-  const [rowsPerPage, setRowsPerPage] = useState(5); // Rows per page
+  const [orders, setOrders] = useState([]); 
+  const [filteredOrders, setFilteredOrders] = useState([]); 
+  const [statusFilter, setStatusFilter] = useState(""); 
+  const [loading, setLoading] = useState(true); 
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null); 
+  const [page, setPage] = useState(0); 
+  const [rowsPerPage, setRowsPerPage] = useState(5); 
 
   // Fetch Orders on Component Mount
   useEffect(() => {
@@ -42,7 +42,12 @@ function OrderManagement() {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/orders");
+      const token = localStorage.getItem("token");
+      const response =await axios.get(`http://localhost:8080/orders?status=shipped&page=0&pageSize=10`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setOrders(response.data);
       setFilteredOrders(response.data);
       setLoading(false);
@@ -74,7 +79,12 @@ function OrderManagement() {
 
   const handleDeleteOrder = async () => {
     try {
-      await axios.delete("http://localhost:8080/orders/${orderToDelete}");
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:8080/orders/${orderToDelete}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setOrders(orders.filter((order) => order._id !== orderToDelete));
       setFilteredOrders(
         filteredOrders.filter((order) => order._id !== orderToDelete)
@@ -184,7 +194,7 @@ function OrderManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDeleteDialog}>Cancel</Button>
-          <Button onClick={handleDeleteOrder} color="error" variant="contained">
+          <Button onClick={handleDeleteOrder} color="error" variant="contained" data-testid="deleteIcon">
             Delete
           </Button>
         </DialogActions>

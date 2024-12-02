@@ -76,7 +76,6 @@ function EditProduct() {
   const [errors, setErrors] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  //Determine the product status
   const getStatus = (availableCount, lowStockCount) => {
     if (availableCount === 0) return 'Out of Stock';
     if (availableCount < lowStockCount) return 'Low Stock';
@@ -93,21 +92,13 @@ function EditProduct() {
           const response = await axios.get(`http://localhost:8080/categories`);
           const productData = getCategoryNames( response.data);
           setFullCategoryList(productData);
-          // const clothingCategories = [
-          //   "Clothing",
-          //   "Unisex",
-          //   "Sweatshirts",
-          //   "Shirts",
-          //   "T-Shirts",
-          //   "Jackets",
-          //   "Pants",
-          //   "Shorts",
-          //   "Dresses",
-          //   "Activewear"
-          // ];          
-          // setFullCategoryList(clothingCategories);
         } catch (error) {
           console.error('Error fetching list of categories:', error);
+          setSnackbar({
+            open: true,
+            message: 'error loading some data',
+            severity: 'error',
+          });
         }
       };
       fetchFulllCategoryList();
@@ -119,7 +110,6 @@ function EditProduct() {
         try {
           const response = await axios.get(`http://localhost:8080/products/${id}`);
           const productData = response.data;
-          //const productData = tempEditProduct;
             dispatch({
               type: 'SET_INITIAL_DATA',
               data: {
@@ -139,6 +129,11 @@ function EditProduct() {
             });
         } catch (error) {
           console.error('Error fetching product:', error);
+          setSnackbar({
+            open: true,
+            message: 'error loading data',
+            severity: 'error',
+          });
         }
       };
       fetchProduct();
@@ -168,14 +163,14 @@ function EditProduct() {
         newErrors[`variations[${index}].size`] = `Size cannot be empty for variation ${index + 1}.`;
       }
   
-      variation.colors.forEach((color, colorIndex) => {
+    variation.colors.forEach((color, colorIndex) => {
         if (!color.color.trim()) {
-          newErrors[`variations[${index}].colors[${colorIndex}].color`] = `Color cannot be empty in variation ${index + 1}, color ${colorIndex + 1}.`;
+            newErrors[`variations[${index}].colors[${colorIndex}].color`] = `Color cannot be empty in variation ${index + 1}, color ${colorIndex + 1}.`;
         } else if (color.color.length < 3) {
-          newErrors[`variations[${index}].colors[${colorIndex}].color`] = `Color must have at least 3 letters in variation ${index + 1}, color ${colorIndex + 1}.`;
+            newErrors[`variations[${index}].colors[${colorIndex}].color`] = `Color must have at least 3 letters in variation ${index + 1}, color ${colorIndex + 1}.`;
         }
         if (color.count <= 0) {
-          newErrors[`variations[${index}].colors[${colorIndex}].count`] = `Count must be greater than 0 in variation ${index + 1}, color ${colorIndex + 1}.`;
+            newErrors[`variations[${index}].colors[${colorIndex}].count`] = `Count must be greater than 0 in variation ${index + 1}, color ${colorIndex + 1}.`;
         }
       });
     });
@@ -212,7 +207,8 @@ function EditProduct() {
         formData.append('galleryImages', image);
       });     
       if (id) {
-        const token ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDEwMzMyLCJleHAiOjE3MzMwOTY3MzJ9.L0a72YWxp7_Lwu37rvqgalNTag3mIA86MXRySYBQJWc";
+        const token = localStorage.getItem("token");
+        console.log(token);
         await axios.patch(`http://localhost:8080/products/${id}`, formData, {
           headers: { 
             'Content-Type': 'multipart/form-data',

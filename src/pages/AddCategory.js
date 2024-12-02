@@ -85,7 +85,7 @@ function AddCategory() {
     formData.append('category', JSON.stringify(category));
     formData.append('image', mainImage);
     try {
-      const token ="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJST0xFX0FETUlOIiwiaWF0IjoxNzMzMDQzODIxLCJleHAiOjE3MzMxMzAyMjF9.WdZNY2Oj28BtVAAYYtBL0ncXE1dtA6jx-z14xc8AFBc";
+      const token = localStorage.getItem("token");
       const response = await axios.post('http://localhost:8080/categories', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -95,6 +95,9 @@ function AddCategory() {
       if (response.status === 200) {
         setSnackbar({ open: true, message: 'Category added successfully!', severity: 'success' });
       }
+      setCategoryName("");
+      setDescription("");
+      setMainImage(null);
     } catch (error) {
       console.error('There was an error adding the category!', error);
       setSnackbar({ open: true, message: 'Error adding category. Please try again.', severity: 'error' });
